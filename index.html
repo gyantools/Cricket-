@@ -157,6 +157,31 @@
     .logo { font-size:20px; margin-right:auto; }
     .news-big .news-thumb { width:84px; height:64px; }
   }
+  /* ===== mobile overflow fix ===== */
+  html, body { max-width:100%; overflow-x:hidden; }
+  .layout { grid-template-columns:minmax(0,1fr) 330px; }
+  .layout.wide { grid-template-columns:minmax(0,1fr); }
+  @media (max-width:900px){ .layout, .layout.wide { grid-template-columns:minmax(0,1fr); } }
+  .layout > main, .layout > aside, .d-card, .p-card, .match-card, .side-card { min-width:0; max-width:100%; }
+  .tbl-wrap { max-width:100%; }
+  .t-name { min-width:0; overflow-wrap:anywhere; }
+  .t-score { overflow-wrap:anywhere; }
+  .d-title, .d-sub, .status-line, .m-head span, .kv div, .news-big h3, .news-big p { overflow-wrap:anywhere; }
+  img { max-width:100%; }
+  @media (max-width:600px){
+    .layout { padding:12px 10px; gap:12px; }
+    .d-card { padding:12px; }
+    .t-row { flex-wrap:wrap; gap:6px 8px; }
+    .t-row .t-score { flex-basis:100%; text-align:left; padding-left:30px; font-size:14px; }
+    .m-teams .t-row .t-score { flex-basis:auto; text-align:right; padding-left:0; }
+    table.sc { min-width:0; font-size:12px; }
+    table.sc th, table.sc td { padding:7px 5px; }
+    table.sc td:first-child { min-width:110px; }
+    .stat { min-width:calc(50% - 6px); }
+    .stat b { font-size:17px; }
+    .sc-tab { padding:6px 10px; font-size:12px; }
+    .d-title { font-size:17px; }
+  }
 </style>
 </head>
 <body>
@@ -573,6 +598,37 @@ function buildInnings(sum){
   return periods;
 }
 
+
+/* ---- Hindi translation of live status lines (ESPN sends English) ---- */
+function ST(txt){
+  if(!txt || lang!=='hi') return txt;
+  let s = String(txt);
+  const tn = n => TN(n.trim());
+  const R = [
+    [/^(.+?) require (\d+) runs? with (\d+) wickets? and (\d+) balls? remaining$/i, (m,a,b,c,d)=>tn(a)+' को '+b+' रन चाहिए, '+c+' विकेट और '+d+' गेंद बाकी'],
+    [/^(.+?) require (\d+) runs? from (\d+) balls?$/i, (m,a,b,c)=>tn(a)+' को '+c+' गेंदों में '+b+' रन चाहिए'],
+    [/^(.+?) require (\d+) runs?(.*)$/i, (m,a,b,c)=>tn(a)+' को '+b+' रन चाहिए'+c],
+    [/^(.+?) need (\d+) runs?(.*)$/i, (m,a,b,c)=>tn(a)+' को '+b+' रन चाहिए'+c],
+    [/^(.+?) won by an inn?s (?:&|and) (\d+) runs?$/i, (m,a,b)=>tn(a)+' पारी और '+b+' रन से जीता'],
+    [/^(.+?) won by (\d+) runs?(.*)$/i, (m,a,b,c)=>tn(a)+' '+b+' रन से जीता'+c],
+    [/^(.+?) won by (\d+) wkts?(.*)$/i, (m,a,b,c)=>tn(a)+' '+b+' विकेट से जीता'+c],
+    [/^(.+?) won by (\d+) wickets?(.*)$/i, (m,a,b,c)=>tn(a)+' '+b+' विकेट से जीता'+c],
+    [/^(.+?) won the super over$/i, (m,a)=>tn(a)+' ने सुपर ओवर जीता'],
+    [/^(.+?) lead by (\d+) runs?(.*)$/i, (m,a,b,c)=>tn(a)+' '+b+' रन से आगे'+c],
+    [/^(.+?) trail by (\d+) runs?(.*)$/i, (m,a,b,c)=>tn(a)+' '+b+' रन से पीछे'+c],
+    [/^(.+?) won (?:the )?toss (?:&|and) (?:elected to )?bat(?:ted)?(?: first)?$/i, (m,a)=>tn(a)+' ने टॉस जीतकर बल्लेबाज़ी चुनी'],
+    [/^(.+?) won (?:the )?toss (?:&|and) (?:elected to )?field(?:ed)?(?: first)?$/i, (m,a)=>tn(a)+' ने टॉस जीतकर गेंदबाज़ी चुनी'],
+    [/^(.+?) won (?:the )?toss$/i, (m,a)=>tn(a)+' ने टॉस जीता'],
+    [/^(.+?)\s*,\s*elected to bat first$/i, (m,a)=>tn(a)+' ने पहले बल्लेबाज़ी चुनी'],
+    [/^(.+?)\s*,\s*elected to field first$/i, (m,a)=>tn(a)+' ने पहले गेंदबाज़ी चुनी'],
+    [/^starts at (\d{1,2}:\d{2}) local time$/i, (m,a)=>'स्थानीय समय '+a+' पर शुरू'],
+    [/^match drawn$/i, ()=>'मैच ड्रॉ'], [/^match tied$/i, ()=>'मैच टाई'], [/^no result$/i, ()=>'कोई परिणाम नहीं'],
+    [/^match abandoned.*$/i, ()=>'मैच रद्द'], [/^stumps$/i, ()=>'दिन का खेल खत्म'], [/^lunch$/i, ()=>'लंच'], [/^tea$/i, ()=>'टी ब्रेक'],
+    [/^innings break$/i, ()=>'पारी ब्रेक'], [/^rain delay$|^rain$/i, ()=>'बारिश से रुका'], [/^result$/i, ()=>'परिणाम'], [/^live$/i, ()=>'लाइव'], [/^scheduled$/i, ()=>'निर्धारित']
+  ];
+  for(const [re,fnc] of R){ if(re.test(s)) return s.replace(re, fnc); }
+  return s;
+}
 /* ============================================================
    RENDER HELPERS
 ============================================================ */
@@ -594,9 +650,9 @@ function matchCard(m){
     const sc = tm.score ? '<span class="t-score">'+esc(tm.score)+'</span>' : '<span class="t-score dim">'+(m.tab==='upcoming'?'—':'&nbsp;')+'</span>';
     return '<div class="t-row '+(bt===side?'batting ':'')+(m.tab==='recent'&&tm.winner?'winner':'')+'">'+logoImg(tm)+'<span class="t-abbr">'+esc(tm.abr||tm.name.slice(0,3).toUpperCase())+'</span><span class="t-name">'+esc(TN(tm.name))+'</span>'+sc+'</div>';
   };
-  if(m.tab==='live' && m.statusText) foot = '📊 '+esc(m.statusText) + (m.statusLabel && !/^live$/i.test(m.statusLabel) ? ' • '+esc(m.statusLabel) : '');
-  if(m.tab==='recent' && m.statusText) foot = '🏁 '+esc(m.statusText);
-  if(m.tab==='upcoming' && m.statusText && !/^starts/i.test(m.statusText)) foot += ' • '+esc(m.statusText);
+  if(m.tab==='live' && m.statusText) foot = '📊 '+esc(ST(m.statusText)) + (m.statusLabel && !/^live$/i.test(m.statusLabel) ? ' • '+esc(ST(m.statusLabel)) : '');
+  if(m.tab==='recent' && m.statusText) foot = '🏁 '+esc(ST(m.statusText));
+  if(m.tab==='upcoming' && m.statusText && !/^starts/i.test(m.statusText)) foot += ' • '+esc(ST(m.statusText));
   return '<div class="match-card" onclick="go(\'match\',\''+esc(m.id)+'\')">'
     + '<div class="m-head"><span>'+head+'</span>'+badge+'</div>'
     + '<div class="m-teams">'+mk('t1', m.t1)+mk('t2', m.t2)+'</div>'
@@ -653,7 +709,7 @@ function renderMatchDetail(id){
     + '<div class="d-sub">'+esc(m.round)+' • '+esc(m.series)+(m.type?' • '+esc(m.type):'')+'</div>';
   const row = tm => '<div class="t-row '+(m.tab==='recent'&&tm.winner?'winner':'')+'" style="margin-bottom:8px">'+logoImg(tm)+'<span class="t-abbr">'+esc(tm.abr)+'</span><span class="t-name">'+esc(TN(tm.name))+'</span><span class="t-score">'+esc(tm.score||'—')+'</span></div>';
   html += row(m.t1) + row(m.t2);
-  if(m.statusText) html += '<div class="status-line">📊 '+esc(m.statusText)+'</div>';
+  if(m.statusText) html += '<div class="status-line">📊 '+esc(ST(m.statusText))+'</div>';
   // live rates
   let inns = null;
   if(D && D.sum){ try{ inns = buildInnings(D.sum); }catch(e){ inns = []; } }
@@ -687,7 +743,7 @@ function renderMatchDetail(id){
     const gi = D.sum.gameInfo || {};
     const ump = (gi.officials||[]).map(o=>dec(o.displayName||o.fullName||'')).filter(Boolean).join(', ');
     const items = [];
-    if(nt('toss')) items.push(['🪙 '+t('toss'), dec(nt('toss'))]);
+    if(nt('toss')) items.push(['🪙 '+t('toss'), ST(dec(nt('toss')).replace(/\s+,/,','))]);
     if((gi.venue||{}).fullName || m.venue) items.push(['📍 '+t('venue'), dec((gi.venue||{}).fullName || m.venue)]);
     if(nt('matchdays')) items.push(['📅 '+t('days'), dec(nt('matchdays'))]);
     if(ump) items.push(['🧑‍⚖️ '+t('umpires'), ump]);
@@ -762,7 +818,7 @@ function renderAside(){
   const live = DATA.live.slice(0,6);
   let html = '<div class="side-card"><div class="side-h">'+t('liveNow')+'<a onclick="setTab(\'live\');go(\'matches\')">'+t('more')+'</a></div>';
   html += live.length? live.map(m=>
-    '<div class="mini-match" onclick="go(\'match\',\''+esc(m.id)+'\')"><b>'+esc(m.t1.abr||TN(m.t1.name))+' '+esc(m.t1.score||'—')+' • '+esc(m.t2.abr||TN(m.t2.name))+' '+esc(m.t2.score||'—')+'</b><small>'+esc(m.statusText||m.series)+'</small></div>'
+    '<div class="mini-match" onclick="go(\'match\',\''+esc(m.id)+'\')"><b>'+esc(m.t1.abr||TN(m.t1.name))+' '+esc(m.t1.score||'—')+' • '+esc(m.t2.abr||TN(m.t2.name))+' '+esc(m.t2.score||'—')+'</b><small>'+esc(ST(m.statusText)||m.series)+'</small></div>'
   ).join('') : '<small style="color:var(--muted)">'+t('empty')+'</small>';
   html += '</div>';
   html += '<div class="side-card"><div class="side-h">'+t('latestNews')+'<a onclick="go(\'news\')">'+t('more')+'</a></div>';

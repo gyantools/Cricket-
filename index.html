@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CricPulse — Live Cricket Score</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Roboto, 'Noto Sans', 'Noto Sans Devanagari', 'Noto Sans Bengali', 'Noto Sans Tamil', Arial, sans-serif; }
+  :root { --nav:#0b3160; --nav2:#0d3c75; --accent:#0d5ea8; --live:#e63946; --bg:#f4f6f9; --card:#fff; --text:#1a1a2e; --muted:#6b7280; --border:#e5e7eb; --green:#16a34a; }
+  body.dark { --bg:#0b1220; --card:#111a2e; --text:#e5e7eb; --muted:#94a3b8; --border:#23304d; --nav:#081428; --nav2:#0c1e3c; }
+  body { background:var(--bg); color:var(--text); transition:background .3s,color .3s; }
+
+  header { background:linear-gradient(135deg,var(--nav),var(--nav2)); color:#fff; position:sticky; top:0; z-index:50; box-shadow:0 2px 10px rgba(0,0,0,.25); }
+  .hwrap { max-width:1200px; margin:auto; display:flex; align-items:center; gap:10px; padding:12px 16px; }
+  .logo { font-size:23px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; white-space:nowrap; }
+  .logo .ball { width:28px; height:28px; background:radial-gradient(circle at 30% 30%, #ff6b6b, #c1121f 70%); border-radius:50%; position:relative; animation:spin 6s linear infinite; }
+  .logo .ball::after { content:''; position:absolute; inset:0; border-radius:50%; border-left:2px solid rgba(255,255,255,.7); }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .logo span.red { color:#ff6b6b; }
+  .search { flex:1; max-width:380px; margin-left:auto; position:relative; }
+  .search input { width:100%; padding:9px 14px 9px 36px; border-radius:20px; border:none; outline:none; background:rgba(255,255,255,.14); color:#fff; font-size:14px; }
+  .search input::placeholder { color:rgba(255,255,255,.65); }
+  .search::before { content:'🔍'; position:absolute; left:11px; top:9px; font-size:14px; z-index:2; }
+  .sres { position:absolute; top:42px; left:0; right:0; background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:10px; overflow:hidden; display:none; box-shadow:0 10px 30px rgba(0,0,0,.3); max-height:320px; overflow-y:auto; z-index:60; }
+  .sres.show { display:block; }
+  .sres-item { padding:9px 13px; font-size:13.5px; cursor:pointer; border-bottom:1px solid var(--border); display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .sres-item:last-child { border-bottom:none; }
+  .sres-item:hover { background:var(--bg); }
+  .sres-item small { color:var(--muted); margin-left:auto; }
+  .langsel { background:rgba(255,255,255,.14); color:#fff; border:none; border-radius:20px; padding:9px 8px; font-size:13.5px; cursor:pointer; outline:none; max-width:128px; }
+  .langsel option { color:#1a1a2e; }
+  .theme-btn { background:rgba(255,255,255,.14); border:none; color:#fff; width:38px; height:38px; border-radius:50%; cursor:pointer; font-size:16px; flex-shrink:0; }
+  nav { background:rgba(0,0,0,.18); }
+  .navwrap { max-width:1200px; margin:auto; display:flex; gap:2px; padding:0 10px; overflow-x:auto; }
+  .navwrap a { color:#dbe7f5; text-decoration:none; padding:10px 13px; font-size:13.5px; font-weight:600; white-space:nowrap; border-bottom:3px solid transparent; cursor:pointer; }
+  .navwrap a.active, .navwrap a:hover { color:#fff; border-bottom-color:#ff6b6b; }
+
+  .layout { max-width:1200px; margin:auto; display:grid; grid-template-columns:1fr 330px; gap:18px; padding:18px 16px; }
+  .layout.wide { grid-template-columns:1fr; }
+  .layout.wide aside { display:none; }
+  @media (max-width:900px){ .layout{ grid-template-columns:1fr; } }
+
+  .tabs { display:flex; gap:4px; background:var(--card); border:1px solid var(--border); border-radius:10px 10px 0 0; padding:6px 6px 0; }
+  .tab { flex:1; text-align:center; padding:10px; font-weight:700; font-size:13.5px; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; }
+  .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+  body.dark .tab.active { color:#6cb6ff; border-bottom-color:#6cb6ff; }
+
+  .pgtitle { font-size:22px; font-weight:800; margin-bottom:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .pgtitle small { font-size:12px; color:var(--muted); font-weight:600; }
+
+  .match-card { background:var(--card); border:1px solid var(--border); border-top:none; padding:14px 16px; cursor:pointer; transition:.2s; }
+  .match-card:last-of-type { border-radius:0 0 10px 10px; }
+  .match-card:hover { box-shadow:0 4px 16px rgba(13,94,168,.15); }
+  .m-head { display:flex; justify-content:space-between; gap:8px; font-size:12px; color:var(--muted); margin-bottom:10px; }
+  .badge { background:var(--live); color:#fff; font-size:11px; font-weight:700; padding:2px 9px; border-radius:10px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+  .badge .dot { width:7px; height:7px; background:#fff; border-radius:50%; animation:pulse 1s infinite; }
+  @keyframes pulse { 50%{ opacity:.25; } }
+  .badge.green { background:var(--green); }
+  .badge.gray { background:#8a94a6; }
+  .m-teams { display:flex; flex-direction:column; gap:8px; }
+  .t-row { display:flex; align-items:center; gap:10px; }
+  .t-abbr { min-width:44px; font-size:11px; font-weight:800; color:var(--muted); background:var(--bg); border-radius:6px; padding:4px 6px; text-align:center; }
+  .t-name { font-weight:700; flex:1; font-size:15px; }
+  .t-score { font-weight:800; font-size:15px; font-variant-numeric:tabular-nums; }
+  .t-score.dim { color:var(--muted); font-weight:600; font-size:13px; }
+  .t-row.batting .t-name::after { content:'•'; color:var(--live); margin-left:6px; animation:pulse 1s infinite; }
+  .m-foot { margin-top:10px; padding-top:9px; border-top:1px dashed var(--border); font-size:13px; color:var(--accent); font-weight:600; }
+  body.dark .m-foot { color:#6cb6ff; }
+  .empty { padding:26px; text-align:center; color:var(--muted); background:var(--card); border:1px solid var(--border); border-top:none; border-radius:0 0 10px 10px; font-size:14px; }
+  .refresh-bar { display:flex; justify-content:space-between; align-items:center; background:var(--card); border:1px solid var(--border); border-bottom:none; border-radius:10px 10px 0 0; padding:8px 14px; font-size:12px; color:var(--muted); }
+  .refresh-bar b { color:var(--green); }
+
+  .back { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:10px 16px; margin-bottom:12px; cursor:pointer; font-weight:700; color:var(--accent); display:inline-block; }
+  body.dark .back { color:#6cb6ff; }
+  .d-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:14px; }
+  .d-title { font-size:19px; font-weight:800; margin-bottom:4px; line-height:1.4; }
+  .d-sub { font-size:13px; color:var(--muted); margin-bottom:12px; }
+  .stats-row { display:flex; gap:12px; flex-wrap:wrap; }
+  .stat { flex:1; min-width:110px; background:var(--bg); border-radius:8px; padding:10px; text-align:center; }
+  .stat b { display:block; font-size:19px; color:var(--accent); }
+  body.dark .stat b { color:#6cb6ff; }
+  .stat span { font-size:11px; color:var(--muted); }
+  .status-line { background:rgba(22,163,74,.1); border-left:4px solid var(--green); padding:10px 14px; border-radius:6px; font-size:14px; font-weight:600; margin-top:10px; }
+  .section-h { font-weight:800; font-size:14px; margin:14px 0 6px; text-transform:uppercase; letter-spacing:.4px; color:var(--accent); }
+  body.dark .section-h { color:#6cb6ff; }
+  .chips { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .chip { background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:7px 13px; font-size:12.5px; font-weight:600; }
+
+  .side-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:16px; }
+  .side-h { font-weight:800; font-size:15px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:6px; }
+  .side-h a { font-size:12px; color:var(--accent); text-decoration:none; font-weight:600; cursor:pointer; white-space:nowrap; }
+  body.dark .side-h a { color:#6cb6ff; }
+  .mini-match { padding:9px 0; border-bottom:1px solid var(--border); cursor:pointer; font-size:13px; }
+  .mini-match:last-child { border-bottom:none; }
+  .mini-match b { display:block; margin-bottom:3px; }
+  .mini-match small { color:var(--muted); }
+  .news-item { display:flex; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); cursor:pointer; }
+  .news-item:last-child { border-bottom:none; }
+  .news-thumb { width:64px; height:48px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; background:linear-gradient(135deg,#1c78d2,#0b3160); }
+  .news-item h4 { font-size:12.5px; line-height:1.45; font-weight:600; }
+  .news-item small { color:var(--muted); font-size:11px; }
+
+  .cards2 { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:14px; }
+  .p-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; }
+  .p-card h3 { font-size:15.5px; font-weight:800; margin-bottom:8px; line-height:1.5; }
+  .p-card p { font-size:13px; color:var(--muted); line-height:1.6; }
+  .news-big { display:flex; gap:14px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:12px; cursor:pointer; transition:.2s; }
+  .news-big:hover { box-shadow:0 4px 16px rgba(13,94,168,.15); }
+  .news-big .news-thumb { width:100px; height:76px; font-size:30px; }
+  .news-big h3 { font-size:15px; font-weight:700; line-height:1.45; margin-bottom:6px; }
+  .news-big p { font-size:13px; color:var(--muted); line-height:1.5; }
+  .news-big .meta { font-size:11.5px; color:var(--accent); font-weight:600; margin-top:6px; }
+  body.dark .news-big .meta { color:#6cb6ff; }
+  .src-badge { display:inline-flex; align-items:center; gap:6px; background:var(--bg); border:1px solid var(--border); padding:5px 11px; border-radius:8px; font-size:12px; font-weight:700; color:var(--muted); }
+  .err-box { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:30px 20px; text-align:center; }
+  .err-box h3 { margin-bottom:8px; font-size:16px; }
+  .err-box p { color:var(--muted); font-size:13.5px; line-height:1.6; }
+  .spin { width:26px; height:26px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:rot .8s linear infinite; margin:0 auto 12px; }
+  @keyframes rot { to { transform:rotate(360deg); } }
+  footer { background:var(--nav); color:#9fb6d4; margin-top:26px; padding:22px 16px; text-align:center; font-size:13px; line-height:1.8; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hwrap">
+    <div class="logo" onclick="go('matches')"><span class="ball"></span>Cric<span class="red">Pulse</span></div>
+    <div class="search">
+      <input id="searchBox" autocomplete="off">
+      <div class="sres" id="sres"></div>
+    </div>
+    <select class="langsel" id="langSel" onchange="setLang(this.value)" title="Language"></select>
+    <button class="theme-btn" onclick="toggleTheme()" title="Dark/Light">🌙</button>
+  </div>
+  <nav><div class="navwrap">
+    <a data-route="home"   onclick="go('matches')"></a>
+    <a data-route="live"   onclick="go('matches')"></a>
+    <a data-route="news"   onclick="go('news')"></a>
+    <a data-route="series" onclick="go('series')"></a>
+    <a data-route="about"  onclick="go('about')"></a>
+  </div></nav>
+</header>
+
+<div class="layout" id="layout">
+  <main id="main"></main>
+  <aside id="aside"></aside>
+</div>
+
+<footer>
+  <div>⚡ <b>CricPulse</b> — <span data-i18n="foot1"></span></div>
+  <div style="font-size:12px;opacity:.85"><span data-i18n="foot2"></span></div>
+</footer>
+
+<script>
+/* ============================================================
+   🌍 FULL TRANSLATION ENGINE — 6 languages
+============================================================ */
+const LANGS = [
+  {c:'en', label:'🇬🇧 English'}, {c:'hi', label:'🇮🇳 हिन्दी'}, {c:'bn', label:'🇧🇩 বাংলা'},
+  {c:'ta', label:'🇮🇳 தமிழ்'}, {c:'es', label:'🇪🇸 Español'}, {c:'fr', label:'🇫🇷 Français'}
+];
+const I18N = {
+en:{ docTitle:'CricPulse — Live Cricket Score', navHome:'Home', navLive:'Live Scores', navNews:'News', navSeries:'Series', navAbout:'About',
+ searchPh:'Search match, team, series…', tabLive:'🔴 LIVE', tabUp:'📅 UPCOMING', tabRec:'✅ RECENT', badgeLive:'LIVE', badgeUp:'UPCOMING', badgeRes:'RESULT',
+ empty:'No matches right now 🏏', back:'← Back to Matches', updated:'updated', secAgo:'{n}s ago', justNow:'just now',
+ stRuns:'RUNS', stWkts:'WICKETS', stOvers:'OVERS', status:'MATCH STATUS', tvOn:'📺 TV Channels', startT:'🕐 Start', type:'Format', series:'Series',
+ liveNow:'🔴 Live Right Now', latestNews:'📰 Latest News', more:'More »', newsTitle:'📰 Cricket News — Real (BBC Sport)', readOn:'Read full story on BBC »',
+ seriesTitle:'🏏 Live & Upcoming Series', matchesN:'{n} matches', liveN:'{n} live now', teamsTitle:'Teams',
+ aboutTitle:'About CricPulse', aboutA:'This site shows 100% REAL cricket data — no fake, no demo numbers. Live scores come from the LiveScore public web API, and news headlines come from the BBC Sport Cricket RSS feed — both fetched live by our own Node.js backend.',
+ aboutB:'The interface is fully translated in 6 languages. Team names, series, innings, overs, wickets and match status are all real-time. Live view refreshes automatically every 15 seconds.',
+ dataSrc:'Data sources: LiveScore public API + BBC Sport RSS', refreshInfo:'⚡ Live scores refresh every 15s',
+ errTitle:'Could not reach the server', errText:'Live data needs the backend server. If you are viewing this as a static file preview, open the LIVE PREVIEW (server) instead.',
+ loading:'Loading real match data…', errStep1:'Open the LIVE PREVIEW (the running server named "CricPulse — Real Live Cricket Website") — not this file preview.', errStep2:'This file viewer has no internet (sandbox). The server preview shows the real live scores.', retry:'Retry', foot1:'Your cricket companion — real live scores, real news, 6 languages', foot2:'100% real data • LiveScore public API + BBC Sport RSS • No simulation',
+ teams:{England:'इंग्लैंड'} },
+hi:{ docTitle:'CricPulse — लाइव क्रिकेट स्कोर', navHome:'होम', navLive:'लाइव स्कोर', navNews:'न्यूज़', navSeries:'सीरीज़', navAbout:'हमारे बारे में',
+ searchPh:'मैच, टीम, सीरीज़ खोजें…', tabLive:'🔴 लाइव', tabUp:'📅 आने वाले', tabRec:'✅ हाल के', badgeLive:'लाइव', badgeUp:'आने वाला', badgeRes:'परिणाम',
+ empty:'अभी कोई मैच नहीं 🏏', back:'← मैचों पर वापस', updated:'अपडेट', secAgo:'{n} सेकंड पहले', justNow:'अभी',
+ stRuns:'रन', stWkts:'विकेट', stOvers:'ओवर', status:'मैच की स्थिति', tvOn:'📺 टीवी चैनल', startT:'🕐 शुरू', type:'फॉर्मेट', series:'सीरीज़',
+ liveNow:'🔴 अभी लाइव', latestNews:'📰 ताज़ा खबरें', more:'और »', newsTitle:'📰 क्रिकेट न्यूज़ — असली (BBC Sport)', readOn:'पूरी खबर BBC पर पढ़ें »',
+ seriesTitle:'🏏 लाइव और आने वाली सीरीज़', matchesN:'{n} मैच', liveN:'{n} लाइव', teamsTitle:'टीमें',
+ aboutTitle:'CricPulse के बारे में', aboutA:'इस साइट पर 100% असली क्रिकेट डेटा है — कोई फेक या डेमो नंबर नहीं। लाइव स्कोर LiveScore के पब्लिक API से आते हैं, और न्यूज़ BBC Sport की क्रिकेट RSS से — दोनों हमारे अपने Node.js सर्वर से लाइव लाए जाते हैं।',
+ aboutB:'इंटरफेस पूरी तरह 6 भाषाओं में अनुवादित है। टीम, सीरीज़, पारी, ओवर, विकेट और मैच स्टेटस — सब रियल-टाइम है। लाइव व्यू हर 15 सेकंड में अपने आप अपडेट होता है।',
+ dataSrc:'डेटा स्रोत: LiveScore पब्लिक API + BBC Sport RSS', refreshInfo:'⚡ लाइव स्कोर हर 15 सेकंड में अपडेट',
+ errTitle:'सर्वर तक नहीं पहुंच पाए', errText:'लाइव डेटा के लिए बैकएंड सर्वर ज़रूरी है। अगर आप इसे स्टैटिक फाइल प्रीव्यू में देख रहे हैं तो LIVE PREVIEW (सर्वर) खोलें।',
+ loading:'असली मैच डेटा लोड हो रहा है…', errStep1:'LIVE PREVIEW खोलो — चल रहा server जिसका नाम "CricPulse — Real Live Cricket Website" है — यह फाइल प्रीव्यू नहीं।', errStep2:'फाइल व्यूअर में इंटरनेट बंद रहता है (sandbox)। सर्वर प्रीव्यू में असली लाइव स्कोर चलता है।', retry:'फिर कोशिश करें', foot1:'आपका क्रिकेट साथी — असली लाइव स्कोर, असली न्यूज़, 6 भाषाएं', foot2:'100% असली डेटा • LiveScore पब्लिक API + BBC Sport RSS • कोई सिमुलेशन नहीं',
+ teams:{England:'इंग्लैंड'} },
+bn:{ docTitle:'CricPulse — লাইভ ক্রিকেট স্কোর', navHome:'হোম', navLive:'লাইভ স্কোর', navNews:'খবর', navSeries:'সিরিজ', navAbout:'আমাদের সম্পর্কে',
+ searchPh:'ম্যাচ, দল, সিরিজ খুঁজুন…', tabLive:'🔴 লাইভ', tabUp:'📅 আসন্ন', tabRec:'✅ সাম্প্রতিক', badgeLive:'লাইভ', badgeUp:'আসন্ন', badgeRes:'ফলাফল',
+ empty:'এখন কোনো ম্যাচ নেই 🏏', back:'← ম্যাচে ফিরুন', updated:'আপডেট', secAgo:'{n} সেকেন্ড আগে', justNow:'এইমাত্র',
+ stRuns:'রান', stWkts:'উইকেট', stOvers:'ওভার', status:'ম্যাচের অবস্থা', tvOn:'📺 টিভি চ্যানেল', startT:'🕐 শুরু', type:'ফরম্যাট', series:'সিরিজ',
+ liveNow:'🔴 এখন লাইভ', latestNews:'📰 সর্বশেষ খবর', more:'আরও »', newsTitle:'📰 ক্রিকেট খবর — আসল (BBC Sport)', readOn:'BBC-তে পুরো খবর পড়ুন »',
+ seriesTitle:'🏏 লাইভ ও আসন্ন সিরিজ', matchesN:'{n} ম্যাচ', liveN:'{n} লাইভ', teamsTitle:'দলগুলো',
+ aboutTitle:'CricPulse সম্পর্কে', aboutA:'এই সাইটে ১০০% আসল ক্রিকেট ডেটা — কোনো ভুয়া বা ডেমো সংখ্যা নয়। লাইভ স্কোর LiveScore-এর পাবলিক API থেকে, আর খবর BBC Sport ক্রিকেট RSS থেকে আসে — আমাদের নিজস্ব Node.js সার্ভার লাইভ আনে।',
+ aboutB:'ইন্টারফেস ৬টি ভাষায় সম্পূর্ণ অনূদিত। দল, সিরিজ, ইনিংস, ওভার, উইকেট ও ম্যাচ স্টেটাস সব রিয়েল-টাইম। লাইভ ভিউ প্রতি ১৫ সেকেন্ডে আপডেট হয়।',
+ dataSrc:'ডেটা উৎস: LiveScore পাবলিক API + BBC Sport RSS', refreshInfo:'⚡ লাইভ স্কোর প্রতি ১৫ সেকেন্ডে আপডেট',
+ errTitle:'সার্ভারে পৌঁছানো যায়নি', errText:'লাইভ ডেটার জন্য ব্যাকএন্ড সার্ভার দরকার। স্ট্যাটিক ফাইল প্রিভিউতে দেখলে LIVE PREVIEW (সার্ভার) খুলুন।',
+ loading:'আসল ম্যাচ ডেটা লোড হচ্ছে…', errStep1:'LIVE PREVIEW খুলুন — চলমান সার্ভার "CricPulse — Real Live Cricket Website" — এই ফাইল প্রিভিউ নয়।', errStep2:'ফাইল ভিউয়ারে ইন্টারনেট বন্ধ থাকে (sandbox)। সার্ভার প্রিভিউতে আসল লাইভ স্কোর চলে।', retry:'আবার চেষ্টা করুন', foot1:'আপনার ক্রিকেট সঙ্গী — আসল লাইভ স্কোর, আসল খবর, ৬টি ভাষা', foot2:'১০০% আসল ডেটা • LiveScore পাবলিক API + BBC Sport RSS • কোনো সিমুলেশন নেই',
+ teams:{England:'ইংল্যান্ড'} },
+ta:{ docTitle:'CricPulse — நேரலை கிரிக்கெட் ஸ்கோர்', navHome:'முகப்பு', navLive:'நேரலை ஸ்கோர்', navNews:'செய்திகள்', navSeries:'தொடர்கள்', navAbout:'எங்களைப் பற்றி',
+ searchPh:'போட்டி, அணி, தொடர் தேடுங்கள்…', tabLive:'🔴 நேரலை', tabUp:'📅 வரவிருக்கும்', tabRec:'✅ சமீபத்திய', badgeLive:'நேரலை', badgeUp:'வரவிருப்பு', badgeRes:'முடிவு',
+ empty:'இப்போது போட்டிகள் இல்லை 🏏', back:'← போட்டிகளுக்கு திரும்பு', updated:'புதுப்பிப்பு', secAgo:'{n} வினாடிகள் முன்', justNow:'இப்போது',
+ stRuns:'ஓட்டங்கள்', stWkts:'விக்கெட்டுகள்', stOvers:'ஓவர்கள்', status:'போட்டி நிலை', tvOn:'📺 டிவி சேனல்கள்', startT:'🕐 தொடக்கம்', type:'வடிவம்', series:'தொடர்',
+ liveNow:'🔴 இப்போது நேரலை', latestNews:'📰 சமீபத்திய செய்திகள்', more:'மேலும் »', newsTitle:'📰 கிரிக்கெட் செய்திகள் — உண்மையானது (BBC Sport)', readOn:'BBC-இல் முழு செய்தி படிக்க »',
+ seriesTitle:'🏏 நேரலை மற்றும் வரவிருக்கும் தொடர்கள்', matchesN:'{n} போட்டிகள்', liveN:'{n} நேரலை', teamsTitle:'அணிகள்',
+ aboutTitle:'CricPulse பற்றி', aboutA:'இந்த தளத்தில் 100% உண்மையான கிரிக்கெட் தரவு — போலி எண்கள் இல்லை. நேரலை ஸ்கோர் LiveScore பொது API-இலிருந்தும், செய்திகள் BBC Sport RSS-இலிருந்தும் எங்கள் சொந்த Node.js சர்வர் மூலம் வருகின்றன.',
+ aboutB:'இடைமுகம் 6 மொழிகளில் முழுமையாக மொழிபெயர்க்கப்பட்டுள்ளது. அணிகள், தொடர்கள், இன்னிங்ஸ், ஓவர்கள், விக்கெட்டுகள் — அனைத்தும் ரியல்-டைம். நேரலை 15 வினாடிகளுக்கு ஒருமுறை புதுப்பிக்கப்படும்.',
+ dataSrc:'தரவு ஆதாரம்: LiveScore பொது API + BBC Sport RSS', refreshInfo:'⚡ நேரலை ஸ்கோர் 15 வினாடிகளில் புதுப்பிப்பு',
+ errTitle:'சர்வரை அடைய முடியவில்லை', errText:'நேரலை தரவுக்கு பின்புல சர்வர் தேவை. நிலையான கோப்பு முன்தோற்றத்தில் பார்த்தால் LIVE PREVIEW (சர்வரை) திறக்கவும்.',
+ loading:'உண்மையான தரவு ஏற்றப்படுகிறது…', errStep1:'LIVE PREVIEW திறக்கவும் — இயங்கும் சர்வர் "CricPulse — Real Live Cricket Website" — இது கோப்பு முன்தோற்றம் அல்ல.', errStep2:'கோப்பு பார்வையில் இணையம் இல்லை (sandbox)। சர்வர் முன்தோற்றத்தில் உண்மையான நேரலை ஸ்கோர் இயங்கும்.', retry:'மீண்டும் முயற்சி', foot1:'உங்கள் கிரிக்கெட் தோழர் — உண்மையான நேரலை ஸ்கோர், செய்தி, 6 மொழிகள்', foot2:'100% உண்மையான தரவு • LiveScore பொது API + BBC Sport RSS • உருவகப்படுத்தல் இல்லை',
+ teams:{England:'இங்கிலாந்து'} },
+es:{ docTitle:'CricPulse — Cricket en vivo', navHome:'Inicio', navLive:'En vivo', navNews:'Noticias', navSeries:'Series', navAbout:'Acerca de',
+ searchPh:'Buscar partido, equipo, serie…', tabLive:'🔴 EN VIVO', tabUp:'📅 PRÓXIMOS', tabRec:'✅ RECIENTES', badgeLive:'EN VIVO', badgeUp:'PRÓXIMO', badgeRes:'RESULTADO',
+ empty:'No hay partidos ahora 🏏', back:'← Volver a los partidos', updated:'actualizado', secAgo:'hace {n}s', justNow:'ahora mismo',
+ stRuns:'CARRERAS', stWkts:'WICKETS', stOvers:'OVERS', status:'ESTADO DEL PARTIDO', tvOn:'📺 Canales de TV', startT:'🕐 Inicio', type:'Formato', series:'Serie',
+ liveNow:'🔴 En vivo ahora', latestNews:'📰 Últimas noticias', more:'Más »', newsTitle:'📰 Noticias — reales (BBC Sport)', readOn:'Leer la historia en BBC »',
+ seriesTitle:'🏏 Series en vivo y próximas', matchesN:'{n} partidos', liveN:'{n} en vivo', teamsTitle:'Equipos',
+ aboutTitle:'Acerca de CricPulse', aboutA:'Este sitio muestra datos de cricket 100% reales — nada falso. Los scores en vivo vienen de la API pública de LiveScore y las noticias del RSS de BBC Sport, traídas por nuestro propio backend Node.js.',
+ aboutB:'La interfaz está totalmente traducida a 6 idiomas. Equipos, series, entradas, overs, wickets y estado del partido — todo en tiempo real. Se actualiza cada 15 segundos.',
+ dataSrc:'Fuentes: API pública de LiveScore + RSS de BBC Sport', refreshInfo:'⚡ Scores cada 15 segundos',
+ errTitle:'No se pudo conectar al servidor', errText:'Los datos en vivo necesitan el backend. Si ves esto en una vista previa estática, abre el LIVE PREVIEW (servidor).',
+ loading:'Cargando datos reales…', errStep1:'Abre el LIVE PREVIEW (el servidor en marcha "CricPulse — Real Live Cricket Website") — no esta vista de archivo.', errStep2:'El visor de archivos no tiene internet (sandbox). En la vista del servidor hay scores reales en vivo.', retry:'Reintentar', foot1:'Tu compañero de cricket — scores reales, noticias reales, 6 idiomas', foot2:'Datos 100% reales • API pública de LiveScore + RSS de BBC Sport • Sin simulación',
+ teams:{England:'Inglaterra'} },
+fr:{ docTitle:'CricPulse — Cricket en direct', navHome:'Accueil', navLive:'Scores en direct', navNews:'Actualités', navSeries:'Séries', navAbout:'À propos',
+ searchPh:'Rechercher match, équipe, série…', tabLive:'🔴 EN DIRECT', tabUp:'📅 À VENIR', tabRec:'✅ RÉCENTS', badgeLive:'EN DIRECT', badgeUp:'À VENIR', badgeRes:'RÉSULTAT',
+ empty:'Aucun match pour le moment 🏏', back:'← Retour aux matchs', updated:'mis à jour', secAgo:'il y a {n}s', justNow:'à l\'instant',
+ stRuns:'COURSES', stWkts:'WICKETS', stOvers:'OVERS', status:'STATUT DU MATCH', tvOn:'📺 Chaînes TV', startT:'🕐 Début', type:'Format', series:'Série',
+ liveNow:'🔴 En direct maintenant', latestNews:'📰 Dernières actus', more:'Plus »', newsTitle:'📰 Actus cricket — réelles (BBC Sport)', readOn:'Lire sur BBC »',
+ seriesTitle:'🏏 Séries en direct et à venir', matchesN:'{n} matchs', liveN:'{n} en direct', teamsTitle:'Équipes',
+ aboutTitle:'À propos de CricPulse', aboutA:'Ce site affiche des données de cricket 100% réelles — rien de faux. Les scores en direct viennent de l\'API publique de LiveScore et les actus du flux RSS de BBC Sport, récupérées par notre propre backend Node.js.',
+ aboutB:'L\'interface est entièrement traduite en 6 langues. Équipes, séries, manches, overs, wickets et statut — tout en temps réel. Actualisation automatique toutes les 15 secondes.',
+ dataSrc:'Sources : API publique LiveScore + RSS BBC Sport', refreshInfo:'⚡ Scores actualisés toutes les 15s',
+ errTitle:'Impossible de joindre le serveur', errText:'Les données en direct nécessitent le backend. Si vous voyez ceci dans un aperçu statique, ouvrez le LIVE PREVIEW (serveur).',
+ loading:'Chargement des données réelles…', errStep1:"Ouvrez le LIVE PREVIEW (le serveur actif « CricPulse — Real Live Cricket Website ») — pas cet aperçu de fichier.", errStep2:"La visionneuse de fichiers n'a pas d'internet (sandbox). L'aperçu serveur montre les vrais scores en direct.", retry:'Réessayer', foot1:'Votre compagnon cricket — scores réels, actus réelles, 6 langues', foot2:'Données 100% réelles • API publique LiveScore + RSS BBC Sport • Aucune simulation',
+ teams:{England:'Angleterre'} }
+};
+
+/* team-name translations for known teams (fallback: English name from API) */
+const TEAM_I18N = {
+  hi:{'India':'भारत','Australia':'ऑस्ट्रेलिया','England':'इंग्लैंड','Pakistan':'पाकिस्तान','South Africa':'दक्षिण अफ्रीका','New Zealand':'न्यूज़ीलैंड','Sri Lanka':'श्रीलंका','West Indies':'वेस्ट इंडीज़','Bangladesh':'बांग्लादेश','Afghanistan':'अफ़ग़ानिस्तान','Ireland':'आयरलैंड','Zimbabwe':'ज़िम्बाब्वे','Nepal':'नेपाल','Scotland':'स्कॉटलैंड','Netherlands':'नीदरलैंड','Namibia':'नामीबिया','Oman':'ओमान','United Arab Emirates':'यूएई','United States':'यूएसए'},
+  bn:{'India':'ভারত','Australia':'অস্ট্রেলিয়া','England':'ইংল্যান্ড','Pakistan':'পাকিস্তান','South Africa':'দক্ষিণ আফ্রিকা','New Zealand':'নিউজিল্যান্ড','Sri Lanka':'শ্রীলঙ্কা','West Indies':'ওয়েস্ট ইন্ডিজ','Bangladesh':'বাংলাদেশ','Afghanistan':'আফগানিস্তান','Ireland':'আয়ারল্যান্ড','Zimbabwe':'জিম্বাবোয়ে','Nepal':'নেপাল','Scotland':'স্কটল্যান্ড','Netherlands':'নেদারল্যান্ডস','Namibia':'নামিবিয়া','Oman':'ওমান','United Arab Emirates':'ইউএই','United States':'যুক্তরাষ্ট্র'},
+  ta:{'India':'இந்தியா','Australia':'ஆஸ்திரேலியா','England':'இங்கிலாந்து','Pakistan':'பாகிஸ்தான்','South Africa':'தென்னாப்பிரிக்கா','New Zealand':'நியூஸிலாந்து','Sri Lanka':'இலங்கை','West Indies':'மேற்கிந்திய தீவுகள்','Bangladesh':'வங்கதேசம்','Afghanistan':'ஆப்கானிஸ்தான்','Ireland':'அயர்லாந்து','Zimbabwe':'ஜிம்பாப்வே','Nepal':'நேபாளம்','Scotland':'ஸ்காட்லாந்து','Netherlands':'நெதர்லாந்து','Namibia':'நமீபியா','Oman':'ஓமன்','United Arab Emirates':'ஐக்கிய அரபு அமீரகம்','United States':'அமெரிக்கா'},
+  es:{'India':'India','Australia':'Australia','England':'Inglaterra','Pakistan':'Pakistán','South Africa':'Sudáfrica','New Zealand':'Nueva Zelanda','Sri Lanka':'Sri Lanka','West Indies':'Indias Occidentales','Bangladesh':'Bangladés','Afghanistan':'Afganistán','Ireland':'Irlanda','Zimbabwe':'Zimbabue','Nepal':'Nepal','Scotland':'Escocia','Netherlands':'Países Bajos','Namibia':'Namibia','Oman':'Omán','United Arab Emirates':'EAU','United States':'EE. UU.'},
+  fr:{'India':'Inde','Australia':'Australie','England':'Angleterre','Pakistan':'Pakistan','South Africa':'Afrique du Sud','New Zealand':'Nouvelle-Zélande','Sri Lanka':'Sri Lanka','West Indies':'Indes occidentales','Bangladesh':'Bangladesh','Afghanistan':'Afghanistan','Ireland':'Irlande','Zimbabwe':'Zimbabwe','Nepal':'Népal','Scotland':'Écosse','Netherlands':'Pays-Bas','Namibia':'Namibie','Oman':'Oman','United Arab Emirates':'EAU','United States':'États-Unis'}
+};
+
+let lang = 'en';
+try { const s = localStorage.getItem('cp_lang'); if(s && I18N[s]) lang = s; else if((navigator.language||'').toLowerCase().startsWith('hi')) lang='hi'; } catch(e){}
+function t(k){ const d=I18N[lang]||I18N.en; return d[k]!==undefined?d[k]:(I18N.en[k]!==undefined?I18N.en[k]:k); }
+function tf(k,p){ let s=t(k); for(const x in p){ s=s.split('{'+x+'}').join(p[x]); } return s; }
+function TN(n){ const m=TEAM_I18N[lang]; return (m&&m[n])||n; }
+
+/* ============================================================
+   REAL DATA — fetch from OUR backend (which fetches real APIs)
+============================================================ */
+let DATA = null;      // {live, upcoming, recent, ts}
+let NEWS = null;      // {items}
+let SERIES = null;
+let state = { view:'matches', tab:'live', param:null, lastFetch:null };
+
+async function api(path){
+  const r = await fetch(path);
+  if(!r.ok) throw new Error('api '+r.status);
+  return r.json();
+}
+async function loadMatches(force){
+  try{
+    if(!force && DATA && Date.now()-DATA.ts < 10000) return;
+    DATA = await api('/api/matches');
+    state.lastFetch = DATA.ts;
+    render();
+  }catch(e){ renderError(); }
+}
+async function loadNews(){ try{ NEWS = await api('/api/news'); render(); }catch(e){} }
+async function loadSeries(){ try{ SERIES = await api('/api/series'); render(); }catch(e){} }
+
+/* ============================================================
+   RENDER HELPERS
+============================================================ */
+const $ = id => document.getElementById(id);
+function esc(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtScore(inn){ if(!inn||!inn.length) return ''; return inn.map(i=> i.runs + '/' + (i.wkts!==undefined?i.wkts:0) + (i.overs?' ('+i.overs+')':'')).join(' & '); }
+function startStr(s){
+  if(!s||s.length<12) return '';
+  const p = {y:+s.slice(0,4), mo:+s.slice(4,6)-1, d:+s.slice(6,8), h:+s.slice(8,10), mi:+s.slice(10,12)};
+  const dt = new Date(p.y,p.mo,p.d,p.h,p.mi);
+  try { return dt.toLocaleString(lang==='en'?'en-GB':lang, {weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}); }
+  catch(e){ return s.slice(0,8)+' '+p.h+':'+String(p.mi).padStart(2,'0'); }
+}
+function agoStr(ts){
+  const n = Math.max(0, Math.round((Date.now()-ts)/1000));
+  return n<5 ? t('justNow') : tf('secAgo',{n});
+}
+function battingSide(m){
+  if(!m.live) return null;
+  // the side batting = the one whose innings has fewer completed innings / latest innings present
+  const i1=m.innings1.length, i2=m.innings2.length;
+  if(i2>0) return 't2'; if(i1>0) return 't1'; return null;
+}
+function innRows(m){
+  const rows=[];
+  m.innings1.forEach((i,ix)=>rows.push({side:'t1', inn:i, label:m.innings1.length>1? (ix+1) : null}));
+  m.innings2.forEach((i,ix)=>rows.push({side:'t2', inn:i, label:m.innings2.length>1? (ix+1) : null}));
+  return rows;
+}
+
+function matchCard(m){
+  const bt = battingSide(m);
+  let badge, teams='', foot='';
+  const head = esc(m.round? m.round+' • ':'') + esc(m.seriesDetail||m.series) ;
+  if(m.tab==='live'){
+    badge = '<span class="badge"><span class="dot"></span>'+t('badgeLive')+'</span>';
+  } else if(m.tab==='upcoming'){
+    badge = '<span class="badge green">'+t('badgeUp')+'</span>';
+    foot = '🕐 '+startStr(m.start);
+  } else {
+    badge = '<span class="badge gray">'+t('badgeRes')+'</span>';
+  }
+  // team rows with real innings scores
+  const rows = {t1:[], t2:[]};
+  innRows(m).forEach(r=>{
+    const s = r.inn.runs + '/' + (r.inn.wkts!==undefined?r.inn.wkts:0);
+    rows[r.side].push(r.inn.overs? s+' ('+r.inn.overs+')' : s);
+  });
+  const mk = (side, team, other) => {
+    const sc = rows[side].length? '<span class="t-score">'+rows[side].join(' & ')+'</span>'
+      : (m.tab==='upcoming'? '<span class="t-score dim">—</span>' : '<span class="t-score dim">&nbsp;</span>');
+    return '<div class="t-row '+(bt===side?'batting':'')+'"><span class="t-abbr">'+esc(team.abr||team.name.slice(0,3).toUpperCase())+'</span><span class="t-name">'+esc(TN(team.name))+'</span>'+sc+'</div>';
+  };
+  teams = mk('t1', m.t1) + mk('t2', m.t2);
+  if(m.tab==='live' && m.statusText) foot = '📊 '+esc(m.statusText);
+  if(m.tab==='recent' && m.statusText) foot = '🏁 '+esc(m.statusText);
+  return '<div class="match-card" onclick="go(\'match\',\''+m.id+'\')">'
+    + '<div class="m-head"><span>'+head+'</span>'+badge+'</div>'
+    + '<div class="m-teams">'+teams+'</div><div class="m-foot">'+foot+'</div></div>';
+}
+
+function renderMatches(){
+  if(!DATA) return '<div class="err-box"><div class="spin"></div><h3>'+t('loading')+'</h3></div>';
+  const items = DATA[state.tab]||[];
+  let html = '<div class="refresh-bar"><span>'+t('refreshInfo')+'</span>'
+    + '<span>'+(state.lastFetch? (t('updated')+' • '+agoStr(state.lastFetch)):'')+' <b style="cursor:pointer" onclick="loadMatches(true)">⟳</b></span></div>';
+  html += '<div class="tabs">'
+    + '<div class="tab '+(state.tab==='live'?'active':'')+'" onclick="setTab(\'live\')">'+t('tabLive')+' ('+DATA.live.length+')</div>'
+    + '<div class="tab '+(state.tab==='upcoming'?'active':'')+'" onclick="setTab(\'upcoming\')">'+t('tabUp')+' ('+DATA.upcoming.length+')</div>'
+    + '<div class="tab '+(state.tab==='recent'?'active':'')+'" onclick="setTab(\'recent\')">'+t('tabRec')+' ('+DATA.recent.length+')</div></div>';
+  html += items.length? items.map(matchCard).join('') : '<div class="empty">'+t('empty')+'</div>';
+  return html;
+}
+function setTab(tb){ state.tab=tb; render(); }
+
+function renderMatchDetail(id){
+  if(!DATA) return '<div class="err-box"><div class="spin"></div><h3>'+t('loading')+'</h3></div>';
+  const m = [...DATA.live,...DATA.upcoming,...DATA.recent].find(x=>x.id===id);
+  if(!m) return '<span class="back" onclick="go(\'matches\')">'+t('back')+'</span><div class="err-box"><p>'+t('empty')+'</p></div>';
+  let html = '<span class="back" onclick="go(\'matches\')">'+t('back')+'</span>';
+  html += '<div class="d-card"><div class="d-title">'+esc(TN(m.t1.name))+' vs '+esc(TN(m.t2.name))+'</div>'
+    + '<div class="d-sub">'+esc(m.round)+' • '+esc(m.series)+' • '+esc(m.type)+'</div>';
+  const inn = innRows(m);
+  const sum = side => inn.filter(r=>r.side===side).reduce((a,r)=>a+r.inn.runs,0);
+  html += '<div class="stats-row">'
+    + '<div class="stat"><b>'+sum('t1')+'</b><span>'+t('stRuns')+' — '+esc(m.t1.abr||'')+'</span></div>'
+    + '<div class="stat"><b>'+sum('t2')+'</b><span>'+t('stRuns')+' — '+esc(m.t2.abr||'')+'</span></div>'
+    + '<div class="stat"><b>'+esc(m.statusLabel||'—')+'</b><span>'+t('status')+'</span></div>'
+    + '</div>';
+  if(m.statusText) html += '<div class="status-line">📊 '+esc(m.statusText)+'</div>';
+  if(m.start) html += '<div class="chips"><span class="chip">'+t('startT')+': '+startStr(m.start)+'</span><span class="chip">'+t('type')+': '+esc(m.type)+'</span></div>';
+  html += '</div>';
+  html += '<div class="d-card"><div class="section-h">'+t('series')+'</div><div style="font-size:14.5px;font-weight:600">'+esc(m.series)+'</div>'
+    + '<div style="font-size:13px;color:var(--muted);margin-top:4px">'+esc(m.seriesDetail)+'</div>';
+  const allInn = inn;
+  if(allInn.length){
+    html += '<div class="section-h">🏏 '+t('stRuns')+'</div>';
+    allInn.forEach(r=>{
+      const nm = r.side==='t1'? TN(m.t1.name) : TN(m.t2.name);
+      const lbl = r.label? ' — '+r.label : '';
+      html += '<div class="status-line" style="background:var(--bg);border-left-color:var(--accent);margin-bottom:8px">'
+        + '<b>'+esc(nm)+lbl+'</b><br>'+r.inn.runs+' / '+ (r.inn.wkts!==undefined?r.inn.wkts:0)
+        + (r.inn.overs? ' &nbsp;('+r.inn.overs+' '+t('stOvers')+')':'') + '</div>';
+    });
+  }
+  if(m.tv && m.tv.length){
+    html += '<div class="section-h">'+t('tvOn')+'</div><div class="chips">' + m.tv.map(x=>'<span class="chip">📺 '+esc(x)+'</span>').join('') + '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderNewsList(){
+  if(!NEWS) return '<div class="err-box"><div class="spin"></div><h3>'+t('loading')+'</h3></div>';
+  let html = '<div class="pgtitle">'+t('newsTitle')+'</div>';
+  if(!NEWS.items.length) return html+'<div class="p-card"><p>'+t('empty')+'</p></div>';
+  html += NEWS.items.map(n=>{
+    let d=''; try{ d = new Date(n.date).toLocaleString(lang==='en'?'en-GB':lang,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }catch(e){}
+    return '<div class="news-big" onclick="window.open(\''+esc(n.link)+'\',\'_blank\')">'
+      + '<div class="news-thumb">📰</div><div><h3>'+esc(n.title)+'</h3><p>'+esc(n.desc)+'</p>'
+      + '<div class="meta">'+esc(d)+' • BBC Sport</div></div></div>';
+  }).join('');
+  return html + '<div class="p-card" style="text-align:center"><span class="src-badge">✅ '+t('readOn')+'</span></div>';
+}
+
+function renderSeries(){
+  if(!SERIES) return '<div class="err-box"><div class="spin"></div><h3>'+t('loading')+'</h3></div>';
+  let html = '<div class="pgtitle">'+t('seriesTitle')+'</div><div class="cards2">';
+  html += SERIES.series.map(s=>
+    '<div class="p-card"><h3>'+esc(s.name)+'</h3>'
+    + '<div style="margin-bottom:10px">'+(s.live? '<span class="badge"><span class="dot"></span>'+tf('liveN',{n:s.live})+'</span>':'<span class="badge green">'+t('badgeUp')+'</span>')+'</div>'
+    + '<div style="font-size:13px;color:var(--muted);margin-bottom:6px">🏏 '+esc(s.detail||'')+'</div>'
+    + '<div style="font-size:13px;color:var(--muted)">'+tf('matchesN',{n:s.total})+'</div></div>'
+  ).join('');
+  return html+'</div>';
+}
+
+function renderAbout(){
+  return '<div class="pgtitle">'+t('aboutTitle')+'</div>'
+    + '<div class="p-card"><div class="art-body" style="font-size:14.5px;line-height:1.8">'
+    + '<p style="margin-bottom:12px">'+t('aboutA')+'</p>'
+    + '<p style="margin-bottom:12px">'+t('aboutB')+'</p>'
+    + '<div class="chips"><span class="src-badge">✅ '+t('dataSrc')+'</span><span class="src-badge">'+t('refreshInfo')+'</span></div>'
+    + '</div></div>';
+}
+
+function renderAside(){
+  if(!DATA) return '';
+  const live = DATA.live.slice(0,5);
+  let html = '<div class="side-card"><div class="side-h">'+t('liveNow')+'<a onclick="setTab(\'live\');go(\'matches\')">'+t('more')+'</a></div>';
+  html += live.length? live.map(m=>{
+    const i1 = m.innings1[0], i2 = m.innings2[0];
+    const s1 = i1? i1.runs+'/'+(i1.wkts!==undefined?i1.wkts:0) : '—';
+    const s2 = i2? i2.runs+'/'+(i2.wkts!==undefined?i2.wkts:0) : '—';
+    return '<div class="mini-match" onclick="go(\'match\',\''+m.id+'\')"><b>'+esc(TN(m.t1.name))+' '+s1+' — '+esc(TN(m.t2.name))+' '+s2+'</b><small>'+esc(m.statusText||m.series)+'</small></div>';
+  }).join('') : '<small style="color:var(--muted)">'+t('empty')+'</small>';
+  html += '</div>';
+  // news
+  html += '<div class="side-card"><div class="side-h">'+t('latestNews')+'<a onclick="go(\'news\')">'+t('more')+'</a></div>';
+  if(NEWS && NEWS.items.length){
+    html += NEWS.items.slice(0,4).map(n=>'<div class="news-item" onclick="window.open(\''+esc(n.link)+'\',\'_blank\')"><div class="news-thumb">📰</div><div><h4>'+esc(n.title)+'</h4><small>BBC Sport</small></div></div>').join('');
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderError(){
+  $('main').innerHTML = '<div class="err-box">'
+    + '<div style="font-size:44px;margin-bottom:10px">📡</div>'
+    + '<h3>'+t('errTitle')+'</h3>'
+    + '<p style="margin-bottom:14px">'+t('errText')+'</p>'
+    + '<div style="background:var(--bg);border:1px dashed var(--border);border-radius:10px;padding:12px 14px;font-size:13.5px;line-height:1.7;text-align:left;margin-bottom:16px">'
+    + '📱 <b>'+t('errStep1')+'</b><br>🖱️ <b>'+t('errStep2')+'</b></div>'
+    + '<button onclick="loadMatches(true)" style="background:var(--accent);color:#fff;border:none;border-radius:22px;padding:11px 26px;font-size:14.5px;font-weight:700;cursor:pointer">🔄 '+t('retry')+'</button>'
+    + '</div>';
+  setTimeout(()=>{ if(!DATA) loadMatches(true); }, 6000);
+}
+
+/* ============================================================
+   SEARCH (real matches + real news)
+============================================================ */
+function doSearch(q){
+  const box = $('sres');
+  if(!q || q.trim().length<2){ box.classList.remove('show'); return; }
+  q = q.toLowerCase();
+  const hits = [];
+  if(DATA) [...DATA.live,...DATA.upcoming,...DATA.recent].forEach(m=>{
+    const hay = (m.t1.name+' '+m.t2.name+' '+m.series+' '+m.round+' '+m.type).toLowerCase();
+    if(hay.includes(q)) hits.push({label:'🏏 '+TN(m.t1.name)+' vs '+TN(m.t2.name), sub:m.round||m.type, act:()=>go('match',m.id)});
+  });
+  if(NEWS) NEWS.items.forEach(n=>{
+    if(n.title.toLowerCase().includes(q)) hits.push({label:'📰 '+n.title, sub:'BBC', act:()=>window.open(n.link,'_blank')});
+  });
+  const seen = new Set(); const uniq = hits.filter(h=>{ const k=h.label; if(seen.has(k)) return false; seen.add(k); return true; }).slice(0,8);
+  box.innerHTML = uniq.length? uniq.map((h,i)=>'<div class="sres-item" data-i="'+i+'">'+esc(h.label)+'<small>'+esc(h.sub)+'</small></div>').join('') : '<div class="sres-item">🤷</div>';
+  box.classList.add('show');
+  uniq.forEach((h,i)=>{ box.querySelector('[data-i="'+i+'"]').onclick = ()=>{ h.act(); box.classList.remove('show'); $('searchBox').value=''; }; });
+}
+
+/* ============================================================
+   ROUTER + RENDER
+============================================================ */
+function go(view, param){ state.view=view; state.param=(param!==undefined?param:null); render(); window.scrollTo(0,0); }
+function setLang(c){ lang=c; try{ localStorage.setItem('cp_lang',c); }catch(e){} applyI18n(); render(); }
+function toggleTheme(){ document.body.classList.toggle('dark'); document.querySelector('.theme-btn').textContent = document.body.classList.contains('dark')?'☀️':'🌙'; }
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.getAttribute('data-i18n')); });
+  $('searchBox').placeholder = t('searchPh');
+  document.title = t('docTitle');
+  document.documentElement.lang = lang;
+}
+const ROUTE_MAP = {home:'matches', live:'matches', news:'news', series:'series', about:'about'};
+function render(){
+  const active = state.view==='match' ? 'live' : state.view;
+  document.querySelectorAll('.navwrap a').forEach(a=>{
+    a.textContent = t({home:'navHome',live:'navLive',news:'navNews',series:'navSeries',about:'navAbout'}[a.dataset.route]);
+    a.classList.toggle('active', ROUTE_MAP[a.dataset.route]===active);
+  });
+  const wide = state.view==='match';
+  $('layout').classList.toggle('wide', wide);
+  let main='';
+  if(state.view==='matches') main = renderMatches();
+  else if(state.view==='match') main = renderMatchDetail(state.param);
+  else if(state.view==='news') main = renderNewsList();
+  else if(state.view==='series') main = renderSeries();
+  else if(state.view==='about') main = renderAbout();
+  $('main').innerHTML = main;
+  if(!wide) $('aside').innerHTML = renderAside();
+}
+
+/* ============================================================
+   INIT — real polling every 15s
+============================================================ */
+(function init(){
+  $('langSel').innerHTML = LANGS.map(l=>'<option value="'+l.c+'"'+(l.c===lang?' selected':'')+'>'+l.label+'</option>').join('');
+  $('searchBox').addEventListener('input', e=>doSearch(e.target.value));
+  document.addEventListener('click', e=>{ if(!e.target.closest('.search')) $('sres').classList.remove('show'); });
+  applyI18n();
+  loadMatches();
+  loadNews();
+  setInterval(()=>loadMatches(true), 15000);      // real live refresh
+  setInterval(()=>loadNews(), 600000);
+})();
+</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40300991a060c4b',t:'MTc5MDI2NTYyOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>

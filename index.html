@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="CricPulse — real live cricket scores, full scorecards, series and news in 6 languages.">
+<meta name="theme-color" content="#0b3160">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%8F%8F%3C/text%3E%3C/svg%3E">
 <title>CricPulse — Live Cricket Score</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Roboto, 'Noto Sans', 'Noto Sans Devanagari', 'Noto Sans Bengali', 'Noto Sans Tamil', Arial, sans-serif; }
@@ -118,6 +121,42 @@
   .spin { width:26px; height:26px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:rot .8s linear infinite; margin:0 auto 12px; }
   @keyframes rot { to { transform:rotate(360deg); } }
   footer { background:var(--nav); color:#9fb6d4; margin-top:26px; padding:22px 16px; text-align:center; font-size:13px; line-height:1.8; }
+  /* ===== v2 additions (static GitHub Pages build) ===== */
+  .t-logo { width:22px; height:22px; object-fit:contain; border-radius:4px; background:#fff; flex-shrink:0; }
+  .t-row.winner .t-name { color:var(--green); }
+  .t-score { text-align:right; }
+  .m-venue { font-size:12px; color:var(--muted); margin-top:6px; }
+  .sc-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 12px; }
+  .sc-tab { background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:7px 13px; font-size:12.5px; font-weight:700; cursor:pointer; color:var(--text); }
+  .sc-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .tbl-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; margin-bottom:12px; border:1px solid var(--border); border-radius:8px; }
+  table.sc { width:100%; border-collapse:collapse; font-size:13px; min-width:460px; }
+  table.sc th { background:var(--bg); color:var(--muted); font-weight:700; font-size:11.5px; text-transform:uppercase; padding:8px 8px; text-align:right; white-space:nowrap; }
+  table.sc th:first-child, table.sc td:first-child { text-align:left; }
+  table.sc td { padding:8px 8px; border-top:1px solid var(--border); text-align:right; font-variant-numeric:tabular-nums; }
+  table.sc td .dis { display:block; font-size:11.5px; color:var(--muted); font-weight:400; margin-top:2px; }
+  table.sc td b.live { color:var(--live); }
+  table.sc tr.tot td { font-weight:800; background:var(--bg); }
+  .kv { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px; margin-top:8px; }
+  .kv div { background:var(--bg); border-radius:8px; padding:9px 11px; font-size:13px; line-height:1.5; }
+  .kv div span { display:block; font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.3px; }
+  .news-thumb img { width:100%; height:100%; object-fit:cover; border-radius:8px; }
+  .news-thumb { overflow:hidden; }
+  a.news-big, a.news-item { text-decoration:none; color:inherit; }
+  .src-pill { display:inline-block; font-size:10.5px; font-weight:800; padding:1px 7px; border-radius:8px; background:var(--bg); border:1px solid var(--border); margin-left:4px; }
+  .p-card.click { cursor:pointer; transition:.2s; }
+  .p-card.click:hover { box-shadow:0 4px 16px rgba(13,94,168,.15); }
+  .ext-link { display:inline-block; margin-top:12px; font-size:13px; font-weight:700; color:var(--accent); text-decoration:none; }
+  body.dark .ext-link { color:#6cb6ff; }
+  .small-muted { font-size:12px; color:var(--muted); }
+  .offline-bar { background:#fff4e5; color:#8a4b00; border:1px solid #ffd8a8; border-radius:10px; padding:8px 12px; font-size:12.5px; margin-bottom:10px; }
+  body.dark .offline-bar { background:#3a2a10; color:#ffd8a8; border-color:#6b4a14; }
+  @media (max-width:600px){
+    .hwrap { flex-wrap:wrap; }
+    .search { order:5; max-width:none; flex-basis:100%; margin-left:0; }
+    .logo { font-size:20px; margin-right:auto; }
+    .news-big .news-thumb { width:84px; height:64px; }
+  }
 </style>
 </head>
 <body>
@@ -243,6 +282,60 @@ const TEAM_I18N = {
   fr:{'India':'Inde','Australia':'Australie','England':'Angleterre','Pakistan':'Pakistan','South Africa':'Afrique du Sud','New Zealand':'Nouvelle-Zélande','Sri Lanka':'Sri Lanka','West Indies':'Indes occidentales','Bangladesh':'Bangladesh','Afghanistan':'Afghanistan','Ireland':'Irlande','Zimbabwe':'Zimbabwe','Nepal':'Népal','Scotland':'Écosse','Netherlands':'Pays-Bas','Namibia':'Namibie','Oman':'Oman','United Arab Emirates':'EAU','United States':'États-Unis'}
 };
 
+/* ---- v2 text patch: correct texts for the static (GitHub Pages) build + new scorecard labels ---- */
+const I18N_PATCH = {
+en:{ aboutA:'CricPulse shows 100% REAL cricket data — no fake or demo numbers. Live scores and full scorecards come directly from the public ESPN / Cricinfo scoreboard feed, and news comes from ESPNcricinfo and BBC Sport. Everything is loaded straight in your browser — no server needed.',
+ aboutB:'The interface is translated into 6 languages. Teams, series, innings, overs, wickets, run-rates and match status are all real-time. Scores refresh automatically every 15 seconds.',
+ dataSrc:'Data: ESPN / Cricinfo public feed + BBC Sport RSS', foot2:'100% real data • ESPN / Cricinfo + BBC Sport • No simulation',
+ newsTitle:'📰 Cricket News — Real (ESPNcricinfo + BBC Sport)', readOn:'Tap any story to read it in full on the original site',
+ errTitle:'Could not load live data', errText:'The live score feed could not be reached right now.', errStep1:'Check that your internet connection is on.', errStep2:'Ad-blockers / "Data Saver" may block the score feed — allow this site, then press Retry.',
+ loading:'Loading real match data…', scorecard:'Scorecard', batting:'Batting', bowling:'Bowling', batter:'Batter', bowler:'Bowler',
+ extras:'Extras', total:'Total', toss:'Toss', venue:'Venue', matchInfo:'Match Info', crr:'Run Rate', rrr:'Req. Rate', target:'Target',
+ noCard:'Scorecard not available yet for this match.', fullOn:'Open full match page on ESPN »', allSeries:'All matches in this series', innLbl:'Inns', umpires:'Umpires', days:'Match days', offline:'⚠️ Connection problem — showing last loaded scores. Retrying…' },
+hi:{ aboutA:'CricPulse पर 100% असली क्रिकेट डेटा है — कोई फेक या डेमो नंबर नहीं। लाइव स्कोर और पूरा स्कोरकार्ड सीधे ESPN / Cricinfo की पब्लिक फीड से आता है, और न्यूज़ ESPNcricinfo व BBC Sport से। सब कुछ सीधे आपके ब्राउज़र में लोड होता है — कोई सर्वर नहीं चाहिए।',
+ aboutB:'इंटरफेस 6 भाषाओं में है। टीम, सीरीज़, पारी, ओवर, विकेट, रन-रेट और मैच स्टेटस — सब रियल-टाइम। स्कोर हर 15 सेकंड में अपने आप अपडेट होता है।',
+ dataSrc:'डेटा: ESPN / Cricinfo पब्लिक फीड + BBC Sport RSS', foot2:'100% असली डेटा • ESPN / Cricinfo + BBC Sport • कोई सिमुलेशन नहीं',
+ newsTitle:'📰 क्रिकेट न्यूज़ — असली (ESPNcricinfo + BBC Sport)', readOn:'पूरी खबर पढ़ने के लिए किसी भी खबर पर टैप करें',
+ errTitle:'लाइव डेटा लोड नहीं हो पाया', errText:'अभी लाइव स्कोर फीड तक नहीं पहुंच पाए।', errStep1:'देखें कि इंटरनेट चालू है।', errStep2:'Ad-blocker / "Data Saver" स्कोर फीड रोक सकता है — इस साइट को allow करें, फिर Retry दबाएं।',
+ loading:'असली मैच डेटा लोड हो रहा है…', scorecard:'स्कोरकार्ड', batting:'बल्लेबाज़ी', bowling:'गेंदबाज़ी', batter:'बल्लेबाज़', bowler:'गेंदबाज़',
+ extras:'अतिरिक्त', total:'कुल', toss:'टॉस', venue:'मैदान', matchInfo:'मैच जानकारी', crr:'रन रेट', rrr:'ज़रूरी रन रेट', target:'लक्ष्य',
+ noCard:'इस मैच का स्कोरकार्ड अभी उपलब्ध नहीं है।', fullOn:'ESPN पर पूरा मैच पेज खोलें »', allSeries:'इस सीरीज़ के सभी मैच', innLbl:'पारी', umpires:'अंपायर', days:'मैच के दिन', offline:'⚠️ कनेक्शन समस्या — आखिरी लोड किया स्कोर दिख रहा है। फिर कोशिश हो रही है…' },
+bn:{ aboutA:'CricPulse-এ ১০০% আসল ক্রিকেট ডেটা — কোনো ভুয়া সংখ্যা নয়। লাইভ স্কোর ও পূর্ণ স্কোরকার্ড সরাসরি ESPN / Cricinfo পাবলিক ফিড থেকে আসে, খবর ESPNcricinfo ও BBC Sport থেকে। সবকিছু সরাসরি আপনার ব্রাউজারে লোড হয় — কোনো সার্ভার লাগে না।',
+ aboutB:'ইন্টারফেস ৬টি ভাষায়। দল, সিরিজ, ইনিংস, ওভার, উইকেট, রান-রেট ও ম্যাচ স্টেটাস সব রিয়েল-টাইম। স্কোর প্রতি ১৫ সেকেন্ডে আপডেট হয়।',
+ dataSrc:'ডেটা: ESPN / Cricinfo ফিড + BBC Sport RSS', foot2:'১০০% আসল ডেটা • ESPN / Cricinfo + BBC Sport • কোনো সিমুলেশন নেই',
+ newsTitle:'📰 ক্রিকেট খবর — আসল (ESPNcricinfo + BBC Sport)', readOn:'পুরো খবর পড়তে যেকোনো খবরে ট্যাপ করুন',
+ errTitle:'লাইভ ডেটা লোড হয়নি', errText:'এই মুহূর্তে লাইভ স্কোর ফিডে পৌঁছানো যায়নি।', errStep1:'ইন্টারনেট চালু আছে কিনা দেখুন।', errStep2:'Ad-blocker / "Data Saver" ফিড আটকাতে পারে — সাইটটি allow করে Retry চাপুন।',
+ loading:'আসল ম্যাচ ডেটা লোড হচ্ছে…', scorecard:'স্কোরকার্ড', batting:'ব্যাটিং', bowling:'বোলিং', batter:'ব্যাটার', bowler:'বোলার',
+ extras:'অতিরিক্ত', total:'মোট', toss:'টস', venue:'মাঠ', matchInfo:'ম্যাচ তথ্য', crr:'রান রেট', rrr:'প্রয়োজনীয় রেট', target:'লক্ষ্য',
+ noCard:'এই ম্যাচের স্কোরকার্ড এখনো নেই।', fullOn:'ESPN-এ পুরো ম্যাচ পেজ খুলুন »', allSeries:'এই সিরিজের সব ম্যাচ', innLbl:'ইনিংস', umpires:'আম্পায়ার', days:'ম্যাচের দিন', offline:'⚠️ সংযোগ সমস্যা — শেষ লোড করা স্কোর দেখানো হচ্ছে…' },
+ta:{ aboutA:'CricPulse-இல் 100% உண்மையான கிரிக்கெட் தரவு — போலி எண்கள் இல்லை. நேரலை ஸ்கோர் மற்றும் முழு ஸ்கோர்கார்டு ESPN / Cricinfo பொது ஊட்டத்திலிருந்து நேரடியாக வருகிறது; செய்திகள் ESPNcricinfo மற்றும் BBC Sport-இலிருந்து. அனைத்தும் உங்கள் உலாவியிலேயே ஏற்றப்படும் — சர்வர் தேவையில்லை.',
+ aboutB:'இடைமுகம் 6 மொழிகளில். அணிகள், தொடர்கள், இன்னிங்ஸ், ஓவர்கள், விக்கெட்டுகள், ரன்-ரேட் — அனைத்தும் ரியல்-டைம். ஸ்கோர் 15 வினாடிகளுக்கு ஒருமுறை புதுப்பிக்கப்படும்.',
+ dataSrc:'தரவு: ESPN / Cricinfo + BBC Sport RSS', foot2:'100% உண்மையான தரவு • ESPN / Cricinfo + BBC Sport',
+ newsTitle:'📰 கிரிக்கெட் செய்திகள் — உண்மையானது (ESPNcricinfo + BBC Sport)', readOn:'முழு செய்தியைப் படிக்க எந்த செய்தியையும் தட்டவும்',
+ errTitle:'நேரலை தரவை ஏற்ற முடியவில்லை', errText:'இப்போது ஸ்கோர் ஊட்டத்தை அடைய முடியவில்லை.', errStep1:'இணைய இணைப்பு உள்ளதா என சரிபார்க்கவும்.', errStep2:'Ad-blocker / "Data Saver" ஊட்டத்தைத் தடுக்கலாம் — இந்த தளத்தை அனுமதித்து Retry அழுத்தவும்.',
+ loading:'உண்மையான தரவு ஏற்றப்படுகிறது…', scorecard:'ஸ்கோர்கார்டு', batting:'பேட்டிங்', bowling:'பந்துவீச்சு', batter:'பேட்டர்', bowler:'பந்துவீச்சாளர்',
+ extras:'உதிரிகள்', total:'மொத்தம்', toss:'டாஸ்', venue:'மைதானம்', matchInfo:'போட்டி தகவல்', crr:'ரன் ரேட்', rrr:'தேவையான ரேட்', target:'இலக்கு',
+ noCard:'இந்தப் போட்டிக்கு ஸ்கோர்கார்டு இன்னும் இல்லை.', fullOn:'ESPN-இல் முழு பக்கம் »', allSeries:'இந்தத் தொடரின் அனைத்து போட்டிகள்', innLbl:'இன்னிங்ஸ்', umpires:'நடுவர்கள்', days:'போட்டி நாட்கள்', offline:'⚠️ இணைப்பு சிக்கல் — கடைசியாக ஏற்றிய ஸ்கோர்…' },
+es:{ aboutA:'CricPulse muestra datos de críquet 100% REALES. Los marcadores en vivo y las tarjetas completas vienen directamente del feed público de ESPN / Cricinfo, y las noticias de ESPNcricinfo y BBC Sport. Todo se carga en tu navegador — sin servidor.',
+ aboutB:'Interfaz traducida a 6 idiomas. Equipos, series, entradas, overs, wickets, run-rate y estado en tiempo real. Los marcadores se actualizan cada 15 segundos.',
+ dataSrc:'Datos: ESPN / Cricinfo + BBC Sport RSS', foot2:'Datos 100% reales • ESPN / Cricinfo + BBC Sport',
+ newsTitle:'📰 Noticias de críquet (ESPNcricinfo + BBC Sport)', readOn:'Toca una noticia para leerla completa',
+ errTitle:'No se pudieron cargar los datos', errText:'No se pudo acceder al feed de marcadores.', errStep1:'Comprueba tu conexión a internet.', errStep2:'Un bloqueador de anuncios puede bloquear el feed — permite este sitio y pulsa Reintentar.',
+ loading:'Cargando datos reales…', scorecard:'Tarjeta', batting:'Bateo', bowling:'Lanzamiento', batter:'Bateador', bowler:'Lanzador',
+ extras:'Extras', total:'Total', toss:'Sorteo', venue:'Estadio', matchInfo:'Info del partido', crr:'Run rate', rrr:'Rate requerido', target:'Objetivo',
+ noCard:'Tarjeta aún no disponible.', fullOn:'Abrir en ESPN »', allSeries:'Todos los partidos de la serie', innLbl:'Entrada', umpires:'Árbitros', days:'Días', offline:'⚠️ Problema de conexión — mostrando últimos datos…' },
+fr:{ aboutA:'CricPulse affiche des données de cricket 100% RÉELLES. Scores en direct et feuilles de match complètes proviennent directement du flux public ESPN / Cricinfo, et les actualités d’ESPNcricinfo et BBC Sport. Tout se charge dans votre navigateur — sans serveur.',
+ aboutB:'Interface traduite en 6 langues. Équipes, séries, manches, overs, wickets, run-rate et statut en temps réel. Scores actualisés toutes les 15 secondes.',
+ dataSrc:'Données : ESPN / Cricinfo + BBC Sport RSS', foot2:'Données 100% réelles • ESPN / Cricinfo + BBC Sport',
+ newsTitle:'📰 Actualités cricket (ESPNcricinfo + BBC Sport)', readOn:'Touchez un article pour le lire en entier',
+ errTitle:'Impossible de charger les données', errText:'Le flux des scores est injoignable pour le moment.', errStep1:'Vérifiez votre connexion internet.', errStep2:'Un bloqueur de pub peut bloquer le flux — autorisez ce site puis Réessayer.',
+ loading:'Chargement des données réelles…', scorecard:'Feuille de match', batting:'Batte', bowling:'Lancer', batter:'Batteur', bowler:'Lanceur',
+ extras:'Extras', total:'Total', toss:'Tirage', venue:'Stade', matchInfo:'Infos du match', crr:'Run rate', rrr:'Rate requis', target:'Objectif',
+ noCard:'Feuille de match pas encore disponible.', fullOn:'Ouvrir sur ESPN »', allSeries:'Tous les matchs de la série', innLbl:'Manche', umpires:'Arbitres', days:'Jours', offline:'⚠️ Problème de connexion — derniers scores affichés…' }
+};
+for (const k in I18N_PATCH){ I18N[k] = Object.assign(I18N[k]||{}, I18N_PATCH[k]); }
+if (I18N.en && I18N.en.teams) delete I18N.en.teams;
+
 let lang = 'en';
 try { const s = localStorage.getItem('cp_lang'); if(s && I18N[s]) lang = s; else if((navigator.language||'').toLowerCase().startsWith('hi')) lang='hi'; } catch(e){}
 function t(k){ const d=I18N[lang]||I18N.en; return d[k]!==undefined?d[k]:(I18N.en[k]!==undefined?I18N.en[k]:k); }
@@ -250,95 +343,274 @@ function tf(k,p){ let s=t(k); for(const x in p){ s=s.split('{'+x+'}').join(p[x])
 function TN(n){ const m=TEAM_I18N[lang]; return (m&&m[n])||n; }
 
 /* ============================================================
-   REAL DATA — fetch from OUR backend (which fetches real APIs)
+   REAL DATA — loaded DIRECTLY in the browser (works on GitHub Pages)
+   Source: ESPN / Cricinfo public scoreboard API (CORS enabled)
+   News  : ESPNcricinfo (ESPN API) + BBC Sport RSS (via rss2json)
 ============================================================ */
+const ESPN_HOSTS = ['https://site.web.api.espn.com', 'https://site.api.espn.com'];
+const NEWS_LEAGUE = '8676';            // any cricket league id returns the global cricket news list
+const BBC_RSS = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent('https://feeds.bbci.co.uk/sport/cricket/rss.xml');
+
 let DATA = null;      // {live, upcoming, recent, ts}
 let NEWS = null;      // {items}
-let SERIES = null;
-let state = { view:'matches', tab:'live', param:null, lastFetch:null };
+let POOL = {};        // id -> match (merged from several days)
+let DETAIL = {};      // id -> {sum, ts, err}
+let state = { view:'matches', tab:'live', param:null, lastFetch:null, inn:{}, offline:false, tabAuto:true };
 
-async function api(path){
-  const r = await fetch(path);
-  if(!r.ok) throw new Error('api '+r.status);
-  return r.json();
-}
-async function loadMatches(force){
+async function getJSON(url, timeout){
+  const ctrl = ('AbortController' in window) ? new AbortController() : null;
+  const tm = setTimeout(()=>{ try{ ctrl && ctrl.abort(); }catch(e){} }, timeout||12000);
   try{
-    if(!force && DATA && Date.now()-DATA.ts < 10000) return;
-    DATA = await api('/api/matches');
-    state.lastFetch = DATA.ts;
-    render();
-  }catch(e){ renderError(); }
+    const r = await fetch(url, ctrl? {signal:ctrl.signal} : undefined);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return await r.json();
+  } finally { clearTimeout(tm); }
 }
-async function loadNews(){ try{ NEWS = await api('/api/news'); render(); }catch(e){} }
-async function loadSeries(){ try{ SERIES = await api('/api/series'); render(); }catch(e){} }
+async function espn(path){
+  let last;
+  for(const h of ESPN_HOSTS){
+    try { return await getJSON(h+path); } catch(e){ last = e; }
+  }
+  throw last || new Error('espn failed');
+}
 
-/* ============================================================
-   RENDER HELPERS
-============================================================ */
+/* ---------- helpers ---------- */
 const $ = id => document.getElementById(id);
-function esc(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function fmtScore(inn){ if(!inn||!inn.length) return ''; return inn.map(i=> i.runs + '/' + (i.wkts!==undefined?i.wkts:0) + (i.overs?' ('+i.overs+')':'')).join(' & '); }
-function startStr(s){
-  if(!s||s.length<12) return '';
-  const p = {y:+s.slice(0,4), mo:+s.slice(4,6)-1, d:+s.slice(6,8), h:+s.slice(8,10), mi:+s.slice(10,12)};
-  const dt = new Date(p.y,p.mo,p.d,p.h,p.mi);
-  try { return dt.toLocaleString(lang==='en'?'en-GB':lang, {weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}); }
-  catch(e){ return s.slice(0,8)+' '+p.h+':'+String(p.mi).padStart(2,'0'); }
+const _ta = document.createElement('textarea');
+function dec(s){ _ta.innerHTML = String(s==null?'':s); return _ta.value; }            // decode &amp; &dagger; …
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function strip(s){ return dec(String(s||'').replace(/<[^>]*>/g,' ')).replace(/\s+/g,' ').trim(); }
+function ymd(off){ const d=new Date(Date.now()+off*86400000); return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0'); }
+function locale(){ return lang==='en' ? 'en-IN' : lang; }
+function startStr(iso){
+  if(!iso) return '';
+  const d = new Date(iso); if(isNaN(d)) return '';
+  try { return d.toLocaleString(locale(), {weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}); }
+  catch(e){ return d.toString().slice(0,21); }
 }
 function agoStr(ts){
   const n = Math.max(0, Math.round((Date.now()-ts)/1000));
   return n<5 ? t('justNow') : tf('secAgo',{n});
 }
+function statMap(stats){ const o={}; (stats||[]).forEach(s=>{ o[s.name]= (s.displayValue!==undefined? s.displayValue : s.value); }); return o; }
+
+/* ---------- normalise one ESPN event ---------- */
+function normEvent(e, lg){
+  const c = (e.competitions||[])[0]; if(!c) return null;
+  const type = ((e.status||{}).type) || ((c.status||{}).type) || {};
+  const summary = dec((c.status||{}).summary || (e.status||{}).summary || '');
+  const comps = (c.competitors||[]).slice().sort((a,b)=>(+a.order||0)-(+b.order||0));
+  if(comps.length<2) return null;
+  const team = x => {
+    const tm = x.team||{};
+    const inns = (x.linescores||[]).filter(l=>l.isBatting && (l.runs || l.wickets || +l.overs || l.isCurrent))
+      .map(l=>({period:l.period, runs:l.runs||0, wkts:l.wickets||0, overs:l.overs, cur:!!l.isCurrent}));
+    return { id:String(x.id||tm.id||''), name:dec(tm.displayName||tm.name||x.displayName||'?'), abr:dec(tm.abbreviation||x.abbreviation||''),
+             logo: tm.logo || '', score: dec(x.score||''), winner: x.winner===true || x.winner==='true', inns };
+  };
+  const t1 = team(comps[0]), t2 = team(comps[1]);
+  const st = type.state || 'pre';
+  const hasScore = !!(t1.score || t2.score);
+  let tab = 'upcoming';
+  if(st==='post') tab='recent';
+  else if(st==='in') tab = (!hasScore && /^starts|^match yet|^scheduled/i.test(summary)) ? 'upcoming' : 'live';
+  const cls = c.class || {};
+  return {
+    id: String(e.id), league: String(lg.id||((e.season||{}).type)||''), tab, live: tab==='live',
+    t1, t2, series: dec(lg.name||lg.abbreviation||''), seriesDetail: dec(e.description||c.description||''),
+    round: dec(c.description||''), type: dec(cls.eventType || cls.generalClassCard || ''),
+    statusText: summary, statusLabel: dec(type.description || type.detail || ''),
+    start: e.date || c.date, end: e.endDate || c.endDate,
+    venue: dec(((c.venue||{}).fullName)||''), tv: [],
+    intl: String(cls.internationalClassId||'0')!=='0',
+    link: ((e.links||[]).find(l=>(l.rel||[]).includes('summary'))||{}).href || ''
+  };
+}
+function parsePanel(j){
+  const out = [];
+  (j && j.scores || []).forEach(s=>{
+    const lg = (s.leagues||[])[0] || {};
+    (s.events||[]).forEach(e=>{ try{ const m = normEvent(e, lg); if(m) out.push(m); }catch(err){} });
+  });
+  return out;
+}
+function rebuild(){
+  const all = Object.values(POOL);
+  const by = (a,b)=> new Date(a.start) - new Date(b.start);
+  const pri = m => (/india/i.test(m.t1.name+' '+m.t2.name) ? 0 : 2) + (m.intl ? 0 : 1) + (/women/i.test(m.t1.name) ? 0.5 : 0);
+  const live = all.filter(m=>m.tab==='live').sort((a,b)=> (pri(a)-pri(b)) || by(a,b));
+  const upcoming = all.filter(m=>m.tab==='upcoming').sort(by);
+  const recent = all.filter(m=>m.tab==='recent').sort((a,b)=>by(b,a)).slice(0,40);
+  DATA = { live, upcoming, recent, ts: Date.now() };
+  if(state.tabAuto){
+    state.tab = live.length ? 'live' : (recent.length ? 'recent' : 'upcoming');
+  }
+}
+
+let fullLoaded = false, loading = false;
+async function loadMatches(force){
+  if(loading) return; loading = true;
+  try{
+    const jobs = [ espn('/apis/site/v2/sports/cricket/scorepanel') ];
+    if(!fullLoaded || force===true){
+      jobs.push(espn('/apis/site/v2/sports/cricket/scorepanel?dates='+ymd(-1)));
+      jobs.push(espn('/apis/site/v2/sports/cricket/scorepanel?dates='+ymd(1)));
+      jobs.push(espn('/apis/site/v2/sports/cricket/scorepanel?dates='+ymd(2)));
+    }
+    const res = await Promise.allSettled(jobs);
+    const ok = res.filter(r=>r.status==='fulfilled');
+    if(!ok.length) throw new Error('all feeds failed');
+    // extra days first, then today's live panel last so it always wins
+    for(let i=res.length-1;i>=0;i--){ if(res[i].status==='fulfilled') parsePanel(res[i].value).forEach(m=>{ POOL[m.id]=m; }); }
+    if(res.length>1) fullLoaded = true;
+    rebuild();
+    state.lastFetch = DATA.ts; state.offline = false;
+    render();
+    if(state.view==='match' && state.param && !DETAIL[state.param]) loadDetail(state.param);
+  }catch(e){
+    state.offline = true;
+    if(!DATA) renderError(); else render();
+  } finally { loading = false; }
+}
+
+/* ---------- news: ESPNcricinfo + BBC ---------- */
+async function loadNews(){
+  const items = [];
+  const [a,b] = await Promise.allSettled([
+    espn('/apis/site/v2/sports/cricket/'+NEWS_LEAGUE+'/news'),
+    getJSON(BBC_RSS, 12000)
+  ]);
+  if(a.status==='fulfilled') (a.value.articles||[]).forEach(x=>{
+    const link = ((x.links||{}).web||{}).href; if(!x.headline || !link) return;
+    items.push({ title:strip(x.headline), desc:strip(x.description||''), link:link.replace(/^http:/,'https:'),
+      date:x.published||x.lastModified, img:((x.images||[])[0]||{}).url||'', src:'ESPNcricinfo' });
+  });
+  if(b.status==='fulfilled' && b.value && b.value.status==='ok') (b.value.items||[]).forEach(x=>{
+    if(!x.title || !x.link) return;
+    items.push({ title:strip(x.title), desc:strip(x.description||''), link:x.link,
+      date:(x.pubDate||'').replace(' ','T')+'Z', img:x.thumbnail || ((x.enclosure||{}).thumbnail) || '', src:'BBC Sport' });
+  });
+  if(!items.length){ if(!NEWS) NEWS = {items:[], failed:true}; render(); return; }
+  const seen = new Set();
+  const uniq = items.filter(n=>{ const k=n.title.toLowerCase(); if(seen.has(k)) return false; seen.add(k); return true; });
+  uniq.sort((x,y)=> (new Date(y.date)||0) - (new Date(x.date)||0));
+  NEWS = { items: uniq.slice(0,40) };
+  render();
+}
+
+/* ---------- match detail (full scorecard) ---------- */
+async function loadDetail(id, silent){
+  const m = findMatch(id);
+  if(!m) return;
+  try{
+    const sum = await espn('/apis/site/v2/sports/cricket/'+m.league+'/summary?event='+id);
+    DETAIL[id] = { sum, ts: Date.now() };
+    // keep list data in sync with the fresher header info
+    try{
+      const hc = (sum.header||{}).competitions && sum.header.competitions[0];
+      if(hc && hc.status && hc.status.summary){ m.statusText = dec(hc.status.summary); }
+    }catch(e){}
+  }catch(e){
+    if(!DETAIL[id]) DETAIL[id] = { err:true, ts: Date.now() };
+  }
+  if(state.view==='match' && state.param===id) render();
+}
+function findMatch(id){ return POOL[id] || null; }
+
+function buildInnings(sum){
+  const hc = ((sum.header||{}).competitions||[])[0] || {};
+  const comps = (hc.competitors||[]);
+  const rosters = sum.rosters || [];
+  const byTeam = {};
+  rosters.forEach(r=>{ byTeam[String((r.team||{}).id)] = r; });
+  const periods = [];
+  comps.forEach(cp=>{
+    const tid = String(cp.id || (cp.team||{}).id);
+    (cp.linescores||[]).forEach(l=>{
+      if(!l.isBatting) return;
+      if(!(l.runs || l.wickets || +l.overs || l.isCurrent)) return;
+      const st = statMap((((l.statistics||{}).categories||[])[0]||{}).stats);
+      periods.push({ period:l.period, teamId:tid, teamName:dec(((cp.team||{}).displayName)||''), abr:((cp.team||{}).abbreviation)||'',
+        runs:l.runs||0, wkts:l.wickets||0, overs:l.overs, cur:!!l.isCurrent, target:l.target||0, score:dec(l.score||''), desc:l.description||'', st });
+    });
+  });
+  periods.sort((a,b)=>a.period-b.period);
+  periods.forEach(p=>{
+    const bat = byTeam[p.teamId], bowlT = rosters.find(r=>String((r.team||{}).id)!==p.teamId);
+    p.batters = []; p.bowlers = [];
+    if(bat) (bat.roster||[]).forEach(pl=>{
+      const per = (pl.linescores||[]).find(x=>x.period===p.period); if(!per || !per.linescores || !per.linescores[0]) return;
+      const L = per.linescores[0], S = L.statistics||{}, s = statMap(((S.categories||[])[0]||{}).stats);
+      if(String(s.batted)!=='1') return;
+      const od = (S.batting||{}).outDetails || {};
+      const out = String(s.outs)==='1';
+      p.batters.push({ order:+L.order||99, name:dec((pl.athlete||{}).battingName || (pl.athlete||{}).displayName || ''),
+        dis: out ? strip(od.shortText || s.dismissalCard || '') : 'not out', out,
+        onStrike: pl.activeName==='striker', atCrease: !out && p.cur && /striker/.test(pl.activeName||''),
+        r:s.runs||'0', b:s.ballsFaced||'0', f:s.fours||'0', x:s.sixes||'0' });
+    });
+    if(bowlT) (bowlT.roster||[]).forEach(pl=>{
+      const per = (pl.linescores||[]).find(x=>x.period===p.period); if(!per || !per.linescores || !per.linescores[0]) return;
+      const s = statMap((((per.linescores[0].statistics||{}).categories||[])[0]||{}).stats);
+      if(!s.overs || s.overs==='0' || s.overs==='0.0') return;
+      p.bowlers.push({ pos:+s.bowlingPosition||99, name:dec((pl.athlete||{}).displayName||''), o:s.overs, m:s.maidens||'0', r:s.conceded||'0',
+        w:s.wickets||'0', e:s.economyRate||'-', wd:s.wides||'0', nb:s.noballs||'0' });
+    });
+    p.batters.sort((a,b)=>a.order-b.order);
+    p.bowlers.sort((a,b)=>a.pos-b.pos);
+  });
+  // fallback to matchcards (older matches without roster stats)
+  if(!periods.some(p=>p.batters.length) && (sum.matchcards||[]).length){
+    const map = {};
+    sum.matchcards.forEach(mc=>{
+      const k = mc.inningsNumber; map[k] = map[k] || { period:+k, teamName:'', batters:[], bowlers:[], st:{}, score:'' };
+      if(mc.headline==='Batting'){ map[k].teamName = dec(mc.teamName); map[k].score = (mc.runs||'')+' '+(mc.total||'');
+        (mc.playerDetails||[]).forEach((pd,i)=>map[k].batters.push({order:i, name:dec(pd.playerName), dis:strip(pd.dismissal), out:!/not out/i.test(pd.dismissal||''), r:pd.runs, b:pd.ballsFaced, f:pd.fours, x:pd.sixes})); }
+      if(mc.headline==='Bowling') (mc.playerDetails||[]).forEach((pd,i)=>map[k].bowlers.push({pos:i, name:dec(pd.playerName), o:pd.overs, m:pd.maidens, r:pd.conceded, w:pd.wickets, e:pd.economyRate, wd:'-', nb:'-'}));
+    });
+    return Object.values(map).sort((a,b)=>a.period-b.period);
+  }
+  return periods;
+}
+
+/* ============================================================
+   RENDER HELPERS
+============================================================ */
 function battingSide(m){
   if(!m.live) return null;
-  // the side batting = the one whose innings has fewer completed innings / latest innings present
-  const i1=m.innings1.length, i2=m.innings2.length;
-  if(i2>0) return 't2'; if(i1>0) return 't1'; return null;
+  const c1 = m.t1.inns.some(i=>i.cur), c2 = m.t2.inns.some(i=>i.cur);
+  if(c1 && !c2) return 't1'; if(c2 && !c1) return 't2'; return null;
 }
-function innRows(m){
-  const rows=[];
-  m.innings1.forEach((i,ix)=>rows.push({side:'t1', inn:i, label:m.innings1.length>1? (ix+1) : null}));
-  m.innings2.forEach((i,ix)=>rows.push({side:'t2', inn:i, label:m.innings2.length>1? (ix+1) : null}));
-  return rows;
-}
+function logoImg(tm){ return tm.logo ? '<img class="t-logo" loading="lazy" src="'+esc(tm.logo)+'" alt="" onerror="this.style.display=\'none\'">' : ''; }
 
 function matchCard(m){
   const bt = battingSide(m);
-  let badge, teams='', foot='';
-  const head = esc(m.round? m.round+' • ':'') + esc(m.seriesDetail||m.series) ;
-  if(m.tab==='live'){
-    badge = '<span class="badge"><span class="dot"></span>'+t('badgeLive')+'</span>';
-  } else if(m.tab==='upcoming'){
-    badge = '<span class="badge green">'+t('badgeUp')+'</span>';
-    foot = '🕐 '+startStr(m.start);
-  } else {
-    badge = '<span class="badge gray">'+t('badgeRes')+'</span>';
-  }
-  // team rows with real innings scores
-  const rows = {t1:[], t2:[]};
-  innRows(m).forEach(r=>{
-    const s = r.inn.runs + '/' + (r.inn.wkts!==undefined?r.inn.wkts:0);
-    rows[r.side].push(r.inn.overs? s+' ('+r.inn.overs+')' : s);
-  });
-  const mk = (side, team, other) => {
-    const sc = rows[side].length? '<span class="t-score">'+rows[side].join(' & ')+'</span>'
-      : (m.tab==='upcoming'? '<span class="t-score dim">—</span>' : '<span class="t-score dim">&nbsp;</span>');
-    return '<div class="t-row '+(bt===side?'batting':'')+'"><span class="t-abbr">'+esc(team.abr||team.name.slice(0,3).toUpperCase())+'</span><span class="t-name">'+esc(TN(team.name))+'</span>'+sc+'</div>';
+  let badge, foot='';
+  const head = esc(m.round? m.round+' • ':'') + esc(m.series);
+  if(m.tab==='live') badge = '<span class="badge"><span class="dot"></span>'+t('badgeLive')+'</span>';
+  else if(m.tab==='upcoming'){ badge = '<span class="badge green">'+t('badgeUp')+'</span>'; foot = '🕐 '+esc(startStr(m.start)); }
+  else badge = '<span class="badge gray">'+t('badgeRes')+'</span>';
+  const mk = (side, tm) => {
+    const sc = tm.score ? '<span class="t-score">'+esc(tm.score)+'</span>' : '<span class="t-score dim">'+(m.tab==='upcoming'?'—':'&nbsp;')+'</span>';
+    return '<div class="t-row '+(bt===side?'batting ':'')+(m.tab==='recent'&&tm.winner?'winner':'')+'">'+logoImg(tm)+'<span class="t-abbr">'+esc(tm.abr||tm.name.slice(0,3).toUpperCase())+'</span><span class="t-name">'+esc(TN(tm.name))+'</span>'+sc+'</div>';
   };
-  teams = mk('t1', m.t1) + mk('t2', m.t2);
-  if(m.tab==='live' && m.statusText) foot = '📊 '+esc(m.statusText);
+  if(m.tab==='live' && m.statusText) foot = '📊 '+esc(m.statusText) + (m.statusLabel && !/^live$/i.test(m.statusLabel) ? ' • '+esc(m.statusLabel) : '');
   if(m.tab==='recent' && m.statusText) foot = '🏁 '+esc(m.statusText);
-  return '<div class="match-card" onclick="go(\'match\',\''+m.id+'\')">'
+  if(m.tab==='upcoming' && m.statusText && !/^starts/i.test(m.statusText)) foot += ' • '+esc(m.statusText);
+  return '<div class="match-card" onclick="go(\'match\',\''+esc(m.id)+'\')">'
     + '<div class="m-head"><span>'+head+'</span>'+badge+'</div>'
-    + '<div class="m-teams">'+teams+'</div><div class="m-foot">'+foot+'</div></div>';
+    + '<div class="m-teams">'+mk('t1', m.t1)+mk('t2', m.t2)+'</div>'
+    + (m.venue? '<div class="m-venue">📍 '+esc(m.venue)+(m.type?' • '+esc(m.type):'')+'</div>' : '')
+    + '<div class="m-foot">'+foot+'</div></div>';
 }
+
+function offlineBar(){ return state.offline ? '<div class="offline-bar">'+t('offline')+'</div>' : ''; }
 
 function renderMatches(){
   if(!DATA) return '<div class="err-box"><div class="spin"></div><h3>'+t('loading')+'</h3></div>';
   const items = DATA[state.tab]||[];
-  let html = '<div class="refresh-bar"><span>'+t('refreshInfo')+'</span>'
-    + '<span>'+(state.lastFetch? (t('updated')+' • '+agoStr(state.lastFetch)):'')+' <b style="cursor:pointer" onclick="loadMatches(true)">⟳</b></span></div>';
+  let html = offlineBar() + '<div class="refresh-bar"><span>'+t('refreshInfo')+'</span>'
+    + '<span>'+t('updated')+' • <span id="agoTxt">'+(state.lastFetch? agoStr(state.lastFetch):'')+'</span> <b style="cursor:pointer" title="Refresh" onclick="loadMatches(true)">⟳</b></span></div>';
   html += '<div class="tabs">'
     + '<div class="tab '+(state.tab==='live'?'active':'')+'" onclick="setTab(\'live\')">'+t('tabLive')+' ('+DATA.live.length+')</div>'
     + '<div class="tab '+(state.tab==='upcoming'?'active':'')+'" onclick="setTab(\'upcoming\')">'+t('tabUp')+' ('+DATA.upcoming.length+')</div>'
@@ -346,68 +618,134 @@ function renderMatches(){
   html += items.length? items.map(matchCard).join('') : '<div class="empty">'+t('empty')+'</div>';
   return html;
 }
-function setTab(tb){ state.tab=tb; render(); }
+function setTab(tb){ state.tab=tb; state.tabAuto=false; render(); }
+
+function scoreTable(p){
+  let h = '';
+  if(p.batters.length){
+    h += '<div class="section-h">🏏 '+t('batting')+' — '+esc(TN(p.teamName))+'</div><div class="tbl-wrap"><table class="sc"><tr><th>'+t('batter')+'</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr>';
+    p.batters.forEach(b=>{
+      const sr = (+b.b>0) ? (100*(+b.r)/(+b.b)).toFixed(1) : '-';
+      h += '<tr><td><b'+(b.atCrease?' class="live"':'')+'>'+esc(b.name)+(b.atCrease?(b.onStrike?' *':''):'')+'</b><span class="dis">'+esc(b.dis)+'</span></td><td><b>'+esc(b.r)+'</b></td><td>'+esc(b.b)+'</td><td>'+esc(b.f)+'</td><td>'+esc(b.x)+'</td><td>'+sr+'</td></tr>';
+    });
+    const st = p.st||{};
+    if(st.extras!==undefined) h += '<tr><td>'+t('extras')+'</td><td colspan="5">'+esc(st.extras)+' <span class="small-muted">(b '+esc(st.byes||0)+', lb '+esc(st.legbyes||0)+', w '+esc(st.wides||0)+', nb '+esc(st.noballs||0)+')</span></td></tr>';
+    if(p.runs!==undefined) h += '<tr class="tot"><td>'+t('total')+'</td><td colspan="5">'+esc(p.runs)+'/'+esc(p.wkts)+(p.overs!==undefined?' ('+esc(p.overs)+' '+t('stOvers')+')':'')+(st.runRate?' • '+t('crr')+' '+esc(st.runRate):'')+'</td></tr>';
+    h += '</table></div>';
+  }
+  if(p.bowlers.length){
+    h += '<div class="section-h">🎯 '+t('bowling')+'</div><div class="tbl-wrap"><table class="sc"><tr><th>'+t('bowler')+'</th><th>O</th><th>M</th><th>R</th><th>W</th><th>Econ</th><th>WD</th><th>NB</th></tr>';
+    p.bowlers.forEach(b=>{ h += '<tr><td><b>'+esc(b.name)+'</b></td><td>'+esc(b.o)+'</td><td>'+esc(b.m)+'</td><td>'+esc(b.r)+'</td><td><b>'+esc(b.w)+'</b></td><td>'+esc(b.e)+'</td><td>'+esc(b.wd)+'</td><td>'+esc(b.nb)+'</td></tr>'; });
+    h += '</table></div>';
+  }
+  return h;
+}
+function setInn(id, ix){ state.inn[id]=ix; render(); }
 
 function renderMatchDetail(id){
   if(!DATA) return '<div class="err-box"><div class="spin"></div><h3>'+t('loading')+'</h3></div>';
-  const m = [...DATA.live,...DATA.upcoming,...DATA.recent].find(x=>x.id===id);
+  const m = findMatch(id);
   if(!m) return '<span class="back" onclick="go(\'matches\')">'+t('back')+'</span><div class="err-box"><p>'+t('empty')+'</p></div>';
-  let html = '<span class="back" onclick="go(\'matches\')">'+t('back')+'</span>';
-  html += '<div class="d-card"><div class="d-title">'+esc(TN(m.t1.name))+' vs '+esc(TN(m.t2.name))+'</div>'
-    + '<div class="d-sub">'+esc(m.round)+' • '+esc(m.series)+' • '+esc(m.type)+'</div>';
-  const inn = innRows(m);
-  const sum = side => inn.filter(r=>r.side===side).reduce((a,r)=>a+r.inn.runs,0);
-  html += '<div class="stats-row">'
-    + '<div class="stat"><b>'+sum('t1')+'</b><span>'+t('stRuns')+' — '+esc(m.t1.abr||'')+'</span></div>'
-    + '<div class="stat"><b>'+sum('t2')+'</b><span>'+t('stRuns')+' — '+esc(m.t2.abr||'')+'</span></div>'
-    + '<div class="stat"><b>'+esc(m.statusLabel||'—')+'</b><span>'+t('status')+'</span></div>'
-    + '</div>';
+  const D = DETAIL[id];
+  let html = offlineBar() + '<span class="back" onclick="go(\'matches\')">'+t('back')+'</span>';
+  const badge = m.tab==='live' ? '<span class="badge"><span class="dot"></span>'+t('badgeLive')+'</span>' : m.tab==='upcoming' ? '<span class="badge green">'+t('badgeUp')+'</span>' : '<span class="badge gray">'+t('badgeRes')+'</span>';
+  html += '<div class="d-card"><div class="d-title">'+esc(TN(m.t1.name))+' vs '+esc(TN(m.t2.name))+' '+badge+'</div>'
+    + '<div class="d-sub">'+esc(m.round)+' • '+esc(m.series)+(m.type?' • '+esc(m.type):'')+'</div>';
+  const row = tm => '<div class="t-row '+(m.tab==='recent'&&tm.winner?'winner':'')+'" style="margin-bottom:8px">'+logoImg(tm)+'<span class="t-abbr">'+esc(tm.abr)+'</span><span class="t-name">'+esc(TN(tm.name))+'</span><span class="t-score">'+esc(tm.score||'—')+'</span></div>';
+  html += row(m.t1) + row(m.t2);
   if(m.statusText) html += '<div class="status-line">📊 '+esc(m.statusText)+'</div>';
-  if(m.start) html += '<div class="chips"><span class="chip">'+t('startT')+': '+startStr(m.start)+'</span><span class="chip">'+t('type')+': '+esc(m.type)+'</span></div>';
-  html += '</div>';
-  html += '<div class="d-card"><div class="section-h">'+t('series')+'</div><div style="font-size:14.5px;font-weight:600">'+esc(m.series)+'</div>'
-    + '<div style="font-size:13px;color:var(--muted);margin-top:4px">'+esc(m.seriesDetail)+'</div>';
-  const allInn = inn;
-  if(allInn.length){
-    html += '<div class="section-h">🏏 '+t('stRuns')+'</div>';
-    allInn.forEach(r=>{
-      const nm = r.side==='t1'? TN(m.t1.name) : TN(m.t2.name);
-      const lbl = r.label? ' — '+r.label : '';
-      html += '<div class="status-line" style="background:var(--bg);border-left-color:var(--accent);margin-bottom:8px">'
-        + '<b>'+esc(nm)+lbl+'</b><br>'+r.inn.runs+' / '+ (r.inn.wkts!==undefined?r.inn.wkts:0)
-        + (r.inn.overs? ' &nbsp;('+r.inn.overs+' '+t('stOvers')+')':'') + '</div>';
-    });
+  // live rates
+  let inns = null;
+  if(D && D.sum){ try{ inns = buildInnings(D.sum); }catch(e){ inns = []; } }
+  const cur = inns && inns.find(p=>p.cur);
+  if(cur && m.live && cur.st){
+    html += '<div class="stats-row" style="margin-top:12px">'
+      + '<div class="stat"><b>'+esc(cur.runs)+'/'+esc(cur.wkts)+'</b><span>'+esc(TN(cur.teamName))+'</span></div>'
+      + '<div class="stat"><b>'+esc(cur.overs)+'</b><span>'+t('stOvers')+'</span></div>'
+      + (cur.st.runRate? '<div class="stat"><b>'+esc(cur.st.runRate)+'</b><span>'+t('crr')+'</span></div>' : '')
+      + ((+cur.target>0 && cur.st.requiredRunRate)? '<div class="stat"><b>'+esc(cur.st.requiredRunRate)+'</b><span>'+t('rrr')+' • '+t('target')+' '+esc(cur.target)+'</span></div>' : '')
+      + '</div>';
   }
-  if(m.tv && m.tv.length){
-    html += '<div class="section-h">'+t('tvOn')+'</div><div class="chips">' + m.tv.map(x=>'<span class="chip">📺 '+esc(x)+'</span>').join('') + '</div>';
+  html += '<div class="chips">'+(m.start?'<span class="chip">'+t('startT')+': '+esc(startStr(m.start))+'</span>':'')+(m.type?'<span class="chip">'+t('type')+': '+esc(m.type)+'</span>':'')+'</div>';
+  html += '</div>';
+
+  // scorecard
+  html += '<div class="d-card"><div class="section-h" style="margin-top:0">📋 '+t('scorecard')+'</div>';
+  if(!D) html += '<div style="padding:16px;text-align:center"><div class="spin"></div></div>';
+  else if(D.err || !inns || !inns.length) html += '<p class="small-muted">'+t('noCard')+'</p>';
+  else {
+    let ix = state.inn[id]; if(ix===undefined || ix>=inns.length) ix = inns.length-1;
+    html += '<div class="sc-tabs">' + inns.map((p,i)=>'<span class="sc-tab '+(i===ix?'active':'')+'" onclick="setInn(\''+esc(id)+'\','+i+')">'+esc(p.abr||TN(p.teamName))+' '+(inns.length>2? t('innLbl')+' '+(inns.filter((q,j)=>j<=i&&q.teamName===p.teamName).length)+' ':'')+(p.runs!==undefined? '— '+esc(p.runs)+'/'+esc(p.wkts):'')+'</span>').join('') + '</div>';
+    html += scoreTable(inns[ix]);
   }
   html += '</div>';
+
+  // match info
+  if(D && D.sum){
+    const notes = (D.sum.notes||[]);
+    const nt = ty => (notes.find(n=>n.type===ty)||{}).text;
+    const gi = D.sum.gameInfo || {};
+    const ump = (gi.officials||[]).map(o=>dec(o.displayName||o.fullName||'')).filter(Boolean).join(', ');
+    const items = [];
+    if(nt('toss')) items.push(['🪙 '+t('toss'), dec(nt('toss'))]);
+    if((gi.venue||{}).fullName || m.venue) items.push(['📍 '+t('venue'), dec((gi.venue||{}).fullName || m.venue)]);
+    if(nt('matchdays')) items.push(['📅 '+t('days'), dec(nt('matchdays'))]);
+    if(ump) items.push(['🧑‍⚖️ '+t('umpires'), ump]);
+    items.push(['🏆 '+t('series'), m.series + (m.seriesDetail? ' — '+m.seriesDetail:'')]);
+    html += '<div class="d-card"><div class="section-h" style="margin-top:0">ℹ️ '+t('matchInfo')+'</div><div class="kv">'
+      + items.map(([k,v])=>'<div><span>'+esc(k)+'</span>'+esc(v)+'</div>').join('') + '</div>'
+      + '<div style="margin-top:10px"><span class="chip" style="cursor:pointer" onclick="go(\'seriesView\',\''+esc(m.league)+'\')">🏏 '+t('allSeries')+' »</span></div>'
+      + (m.link? '<a class="ext-link" href="'+esc(m.link)+'" target="_blank" rel="noopener">'+t('fullOn')+'</a>' : '')
+      + '</div>';
+  }
   return html;
 }
 
+function newsThumb(n, big){
+  return '<div class="news-thumb">'+(n.img? '<img loading="lazy" src="'+esc(n.img)+'" alt="" onerror="this.parentNode.textContent=\'📰\'">' : '📰')+'</div>';
+}
 function renderNewsList(){
   if(!NEWS) return '<div class="err-box"><div class="spin"></div><h3>'+t('loading')+'</h3></div>';
   let html = '<div class="pgtitle">'+t('newsTitle')+'</div>';
-  if(!NEWS.items.length) return html+'<div class="p-card"><p>'+t('empty')+'</p></div>';
+  if(!NEWS.items.length) return html+'<div class="p-card"><p>'+t('empty')+'</p><button onclick="loadNews()" style="margin-top:10px;background:var(--accent);color:#fff;border:none;border-radius:18px;padding:8px 18px;cursor:pointer">🔄 '+t('retry')+'</button></div>';
   html += NEWS.items.map(n=>{
-    let d=''; try{ d = new Date(n.date).toLocaleString(lang==='en'?'en-GB':lang,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }catch(e){}
-    return '<div class="news-big" onclick="window.open(\''+esc(n.link)+'\',\'_blank\')">'
-      + '<div class="news-thumb">📰</div><div><h3>'+esc(n.title)+'</h3><p>'+esc(n.desc)+'</p>'
-      + '<div class="meta">'+esc(d)+' • BBC Sport</div></div></div>';
+    let d=''; try{ const dt=new Date(n.date); if(!isNaN(dt)) d = dt.toLocaleString(locale(),{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }catch(e){}
+    return '<a class="news-big" href="'+esc(n.link)+'" target="_blank" rel="noopener">'+newsThumb(n,true)
+      + '<div><h3>'+esc(n.title)+'</h3><p>'+esc(n.desc)+'</p><div class="meta">'+esc(d)+' • '+esc(n.src)+'</div></div></a>';
   }).join('');
   return html + '<div class="p-card" style="text-align:center"><span class="src-badge">✅ '+t('readOn')+'</span></div>';
 }
 
+function seriesList(){
+  if(!DATA) return [];
+  const map = {};
+  [...DATA.live, ...DATA.upcoming, ...DATA.recent].forEach(m=>{
+    const s = map[m.league] = map[m.league] || { id:m.league, name:m.series, total:0, live:0, types:new Set(), start:m.start };
+    s.total++; if(m.live) s.live++; if(m.type) s.types.add(m.type);
+    if(new Date(m.start) < new Date(s.start)) s.start = m.start;
+  });
+  return Object.values(map).sort((a,b)=> (b.live-a.live) || a.name.localeCompare(b.name));
+}
 function renderSeries(){
-  if(!SERIES) return '<div class="err-box"><div class="spin"></div><h3>'+t('loading')+'</h3></div>';
-  let html = '<div class="pgtitle">'+t('seriesTitle')+'</div><div class="cards2">';
-  html += SERIES.series.map(s=>
-    '<div class="p-card"><h3>'+esc(s.name)+'</h3>'
-    + '<div style="margin-bottom:10px">'+(s.live? '<span class="badge"><span class="dot"></span>'+tf('liveN',{n:s.live})+'</span>':'<span class="badge green">'+t('badgeUp')+'</span>')+'</div>'
-    + '<div style="font-size:13px;color:var(--muted);margin-bottom:6px">🏏 '+esc(s.detail||'')+'</div>'
+  if(!DATA) return '<div class="err-box"><div class="spin"></div><h3>'+t('loading')+'</h3></div>';
+  const list = seriesList();
+  let html = '<div class="pgtitle">'+t('seriesTitle')+'</div>';
+  if(!list.length) return html+'<div class="p-card"><p>'+t('empty')+'</p></div>';
+  html += '<div class="cards2">' + list.map(s=>
+    '<div class="p-card click" onclick="go(\'seriesView\',\''+esc(s.id)+'\')"><h3>'+esc(s.name)+'</h3>'
+    + '<div style="margin-bottom:10px">'+(s.live? '<span class="badge"><span class="dot"></span>'+tf('liveN',{n:s.live})+'</span>':'<span class="badge green">'+tf('matchesN',{n:s.total})+'</span>')+'</div>'
+    + '<div style="font-size:13px;color:var(--muted);margin-bottom:6px">🏏 '+esc([...s.types].join(', ')||'—')+'</div>'
     + '<div style="font-size:13px;color:var(--muted)">'+tf('matchesN',{n:s.total})+'</div></div>'
-  ).join('');
-  return html+'</div>';
+  ).join('') + '</div>';
+  return html;
+}
+function renderSeriesView(lid){
+  if(!DATA) return '<div class="err-box"><div class="spin"></div><h3>'+t('loading')+'</h3></div>';
+  const ms = [...DATA.live, ...DATA.upcoming, ...DATA.recent].filter(m=>m.league===lid);
+  let html = '<span class="back" onclick="go(\'series\')">← '+t('navSeries')+'</span>';
+  html += '<div class="pgtitle">🏏 '+esc(ms[0]? ms[0].series : '')+'</div>';
+  if(!ms.length) return html+'<div class="p-card"><p>'+t('empty')+'</p></div>';
+  return html + '<div style="border-top:1px solid var(--border);border-radius:10px;overflow:hidden">'+ms.map(matchCard).join('')+'</div>';
 }
 
 function renderAbout(){
@@ -421,34 +759,32 @@ function renderAbout(){
 
 function renderAside(){
   if(!DATA) return '';
-  const live = DATA.live.slice(0,5);
+  const live = DATA.live.slice(0,6);
   let html = '<div class="side-card"><div class="side-h">'+t('liveNow')+'<a onclick="setTab(\'live\');go(\'matches\')">'+t('more')+'</a></div>';
-  html += live.length? live.map(m=>{
-    const i1 = m.innings1[0], i2 = m.innings2[0];
-    const s1 = i1? i1.runs+'/'+(i1.wkts!==undefined?i1.wkts:0) : '—';
-    const s2 = i2? i2.runs+'/'+(i2.wkts!==undefined?i2.wkts:0) : '—';
-    return '<div class="mini-match" onclick="go(\'match\',\''+m.id+'\')"><b>'+esc(TN(m.t1.name))+' '+s1+' — '+esc(TN(m.t2.name))+' '+s2+'</b><small>'+esc(m.statusText||m.series)+'</small></div>';
-  }).join('') : '<small style="color:var(--muted)">'+t('empty')+'</small>';
+  html += live.length? live.map(m=>
+    '<div class="mini-match" onclick="go(\'match\',\''+esc(m.id)+'\')"><b>'+esc(m.t1.abr||TN(m.t1.name))+' '+esc(m.t1.score||'—')+' • '+esc(m.t2.abr||TN(m.t2.name))+' '+esc(m.t2.score||'—')+'</b><small>'+esc(m.statusText||m.series)+'</small></div>'
+  ).join('') : '<small style="color:var(--muted)">'+t('empty')+'</small>';
   html += '</div>';
-  // news
   html += '<div class="side-card"><div class="side-h">'+t('latestNews')+'<a onclick="go(\'news\')">'+t('more')+'</a></div>';
   if(NEWS && NEWS.items.length){
-    html += NEWS.items.slice(0,4).map(n=>'<div class="news-item" onclick="window.open(\''+esc(n.link)+'\',\'_blank\')"><div class="news-thumb">📰</div><div><h4>'+esc(n.title)+'</h4><small>BBC Sport</small></div></div>').join('');
-  }
+    html += NEWS.items.slice(0,5).map(n=>'<a class="news-item" href="'+esc(n.link)+'" target="_blank" rel="noopener">'+newsThumb(n)+'<div><h4>'+esc(n.title)+'</h4><small>'+esc(n.src)+'</small></div></a>').join('');
+  } else if(!NEWS){ html += '<div class="spin"></div>'; }
   html += '</div>';
   return html;
 }
 
+let errTimer = null;
 function renderError(){
   $('main').innerHTML = '<div class="err-box">'
     + '<div style="font-size:44px;margin-bottom:10px">📡</div>'
     + '<h3>'+t('errTitle')+'</h3>'
     + '<p style="margin-bottom:14px">'+t('errText')+'</p>'
     + '<div style="background:var(--bg);border:1px dashed var(--border);border-radius:10px;padding:12px 14px;font-size:13.5px;line-height:1.7;text-align:left;margin-bottom:16px">'
-    + '📱 <b>'+t('errStep1')+'</b><br>🖱️ <b>'+t('errStep2')+'</b></div>'
+    + '📶 <b>'+t('errStep1')+'</b><br>🛡️ <b>'+t('errStep2')+'</b></div>'
     + '<button onclick="loadMatches(true)" style="background:var(--accent);color:#fff;border:none;border-radius:22px;padding:11px 26px;font-size:14.5px;font-weight:700;cursor:pointer">🔄 '+t('retry')+'</button>'
     + '</div>';
-  setTimeout(()=>{ if(!DATA) loadMatches(true); }, 6000);
+  clearTimeout(errTimer);
+  errTimer = setTimeout(()=>{ if(!DATA) loadMatches(true); }, 8000);
 }
 
 /* ============================================================
@@ -457,27 +793,44 @@ function renderError(){
 function doSearch(q){
   const box = $('sres');
   if(!q || q.trim().length<2){ box.classList.remove('show'); return; }
-  q = q.toLowerCase();
+  q = q.toLowerCase().trim();
   const hits = [];
   if(DATA) [...DATA.live,...DATA.upcoming,...DATA.recent].forEach(m=>{
-    const hay = (m.t1.name+' '+m.t2.name+' '+m.series+' '+m.round+' '+m.type).toLowerCase();
-    if(hay.includes(q)) hits.push({label:'🏏 '+TN(m.t1.name)+' vs '+TN(m.t2.name), sub:m.round||m.type, act:()=>go('match',m.id)});
+    const hay = (m.t1.name+' '+m.t2.name+' '+TN(m.t1.name)+' '+TN(m.t2.name)+' '+m.t1.abr+' '+m.t2.abr+' '+m.series+' '+m.round+' '+m.type+' '+m.venue).toLowerCase();
+    if(hay.includes(q)) hits.push({label:'🏏 '+TN(m.t1.name)+' vs '+TN(m.t2.name), sub:(m.tab==='live'?'🔴 ':'')+(m.round||m.type), act:()=>go('match',m.id)});
   });
   if(NEWS) NEWS.items.forEach(n=>{
-    if(n.title.toLowerCase().includes(q)) hits.push({label:'📰 '+n.title, sub:'BBC', act:()=>window.open(n.link,'_blank')});
+    if(n.title.toLowerCase().includes(q)) hits.push({label:'📰 '+n.title, sub:n.src, act:()=>window.open(n.link,'_blank','noopener')});
   });
-  const seen = new Set(); const uniq = hits.filter(h=>{ const k=h.label; if(seen.has(k)) return false; seen.add(k); return true; }).slice(0,8);
+  const seen = new Set(); const uniq = hits.filter(h=>{ const k=h.label; if(seen.has(k)) return false; seen.add(k); return true; }).slice(0,10);
   box.innerHTML = uniq.length? uniq.map((h,i)=>'<div class="sres-item" data-i="'+i+'">'+esc(h.label)+'<small>'+esc(h.sub)+'</small></div>').join('') : '<div class="sres-item">🤷</div>';
   box.classList.add('show');
   uniq.forEach((h,i)=>{ box.querySelector('[data-i="'+i+'"]').onclick = ()=>{ h.act(); box.classList.remove('show'); $('searchBox').value=''; }; });
 }
 
 /* ============================================================
-   ROUTER + RENDER
+   ROUTER (hash based → browser Back button works) + RENDER
 ============================================================ */
-function go(view, param){ state.view=view; state.param=(param!==undefined?param:null); render(); window.scrollTo(0,0); }
+function go(view, param){
+  const h = '#/'+view+(param!==undefined && param!==null ? '/'+encodeURIComponent(param) : '');
+  if(location.hash !== h) location.hash = h; else route();
+}
+function route(){
+  const parts = (location.hash||'').replace(/^#\/?/,'').split('/');
+  const v = parts[0] || 'matches';
+  const valid = ['matches','match','news','series','seriesView','about'];
+  state.view = valid.includes(v) ? v : 'matches';
+  state.param = parts[1] ? decodeURIComponent(parts[1]) : null;
+  if(state.view==='match' && state.param) loadDetail(state.param);
+  render(); window.scrollTo(0,0);
+}
 function setLang(c){ lang=c; try{ localStorage.setItem('cp_lang',c); }catch(e){} applyI18n(); render(); }
-function toggleTheme(){ document.body.classList.toggle('dark'); document.querySelector('.theme-btn').textContent = document.body.classList.contains('dark')?'☀️':'🌙'; }
+function toggleTheme(){
+  document.body.classList.toggle('dark');
+  const dark = document.body.classList.contains('dark');
+  document.querySelector('.theme-btn').textContent = dark?'☀️':'🌙';
+  try{ localStorage.setItem('cp_theme', dark?'dark':'light'); }catch(e){}
+}
 function applyI18n(){
   document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.getAttribute('data-i18n')); });
   $('searchBox').placeholder = t('searchPh');
@@ -486,20 +839,24 @@ function applyI18n(){
 }
 const ROUTE_MAP = {home:'matches', live:'matches', news:'news', series:'series', about:'about'};
 function render(){
-  const active = state.view==='match' ? 'live' : state.view;
+  const active = state.view==='match' ? 'matches' : state.view==='seriesView' ? 'series' : state.view;
   document.querySelectorAll('.navwrap a').forEach(a=>{
     a.textContent = t({home:'navHome',live:'navLive',news:'navNews',series:'navSeries',about:'navAbout'}[a.dataset.route]);
-    a.classList.toggle('active', ROUTE_MAP[a.dataset.route]===active);
+    a.classList.toggle('active', a.dataset.route!=='home' && ROUTE_MAP[a.dataset.route]===active);
   });
   const wide = state.view==='match';
   $('layout').classList.toggle('wide', wide);
   let main='';
-  if(state.view==='matches') main = renderMatches();
-  else if(state.view==='match') main = renderMatchDetail(state.param);
-  else if(state.view==='news') main = renderNewsList();
-  else if(state.view==='series') main = renderSeries();
-  else if(state.view==='about') main = renderAbout();
-  $('main').innerHTML = main;
+  try{
+    if(state.view==='matches') main = renderMatches();
+    else if(state.view==='match') main = renderMatchDetail(state.param);
+    else if(state.view==='news') main = renderNewsList();
+    else if(state.view==='series') main = renderSeries();
+    else if(state.view==='seriesView') main = renderSeriesView(state.param);
+    else if(state.view==='about') main = renderAbout();
+  }catch(e){ console.error(e); main = '<div class="err-box"><p>⚠️ '+esc(e.message)+'</p></div>'; }
+  if(!DATA && state.offline && (state.view==='matches'||state.view==='match'||state.view==='series'||state.view==='seriesView')) { renderError(); }
+  else $('main').innerHTML = main;
   if(!wide) $('aside').innerHTML = renderAside();
 }
 
@@ -507,16 +864,24 @@ function render(){
    INIT — real polling every 15s
 ============================================================ */
 (function init(){
+  try{ if(localStorage.getItem('cp_theme')==='dark'){ document.body.classList.add('dark'); document.querySelector('.theme-btn').textContent='☀️'; } }catch(e){}
   $('langSel').innerHTML = LANGS.map(l=>'<option value="'+l.c+'"'+(l.c===lang?' selected':'')+'>'+l.label+'</option>').join('');
   $('searchBox').addEventListener('input', e=>doSearch(e.target.value));
   document.addEventListener('click', e=>{ if(!e.target.closest('.search')) $('sres').classList.remove('show'); });
+  window.addEventListener('hashchange', route);
+  document.querySelectorAll('.navwrap a').forEach(a=>{ a.setAttribute('href','javascript:void(0)'); });
   applyI18n();
+  route();
   loadMatches();
   loadNews();
-  setInterval(()=>loadMatches(true), 15000);      // real live refresh
-  setInterval(()=>loadNews(), 600000);
+  setInterval(()=>{ if(!document.hidden) loadMatches(); }, 15000);                 // live refresh (today's panel)
+  setInterval(()=>{ if(!document.hidden) loadMatches(true); }, 5*60000);           // full refresh (yesterday/tomorrow)
+  setInterval(()=>{ if(!document.hidden && state.view==='match' && state.param){ const m=findMatch(state.param); if(m && m.live) loadDetail(state.param, true); } }, 20000);
+  setInterval(()=>loadNews(), 10*60000);
+  setInterval(()=>{ const el=$('agoTxt'); if(el && state.lastFetch) el.textContent = agoStr(state.lastFetch); }, 1000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) loadMatches(); });
 })();
+
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40300991a060c4b',t:'MTc5MDI2NTYyOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
